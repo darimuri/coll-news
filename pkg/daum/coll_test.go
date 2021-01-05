@@ -9,7 +9,7 @@ import (
 	"github.com/darimuri/coll-news/pkg/test"
 )
 
-var _ = Describe("Purchase", func() {
+var _ = Describe("collect news", func() {
 	var browser *rod.Browser
 	var cut *Portal
 
@@ -62,7 +62,7 @@ var _ = Describe("Purchase", func() {
 			}
 		})
 
-		FIt("news home news", func() {
+		It("news home news", func() {
 			cut.NewsHome()
 
 			newsList, err := cut.GetNewsHomeNews()
