@@ -29,15 +29,17 @@ type Portal struct {
 }
 
 func (p *Portal) Top() {
-	p.openMaximized("https://www.daum.net/")
+	p.openWidth1920("https://www.daum.net/")
 }
 
 func (p *Portal) NewsHome() {
-	p.openMaximized("https://news.daum.net/")
+	p.openWidth1920("https://news.daum.net/")
 }
 
-func (p *Portal) openMaximized(url string) {
+func (p *Portal) openWidth1920(url string) {
 	page := p.BrowserTemplate.MustPage(url)
+	p.PageTemplate = rt.NewPageTemplate(page)
+	p.SetViewport(1920, 1080)
 
 	if err := page.WaitLoad(); err != nil {
 		if false == cdp.ErrCtxDestroyed.Is(err) {
@@ -46,8 +48,12 @@ func (p *Portal) openMaximized(url string) {
 		log.Println(err.Error(), "occurred occasionally but has no problem")
 	}
 
-	p.PageTemplate = rt.NewPageTemplate(page)
-	p.MaximizeToWindowBounds()
+	if err := page.WaitIdle(time.Minute * 10); err != nil {
+		if false == cdp.ErrCtxDestroyed.Is(err) {
+			panic(err)
+		}
+		log.Println(err.Error(), "failed to wait idle for 10m, but has no problem")
+	}
 }
 
 func (p *Portal) GetTopNews() ([]types.News, error) {
@@ -202,25 +208,28 @@ func (p *Portal) GetNewsHomeNews() ([]types.News, error) {
 
 			newsList = append(newsList, news)
 
-			for jdx, div := range li.El("div[class=relate_thumb]").Els("div[class=thumb_relate]") {
-				a := div.El("a")
-				rspan := div.El("span[class=info_news]")
+			relateSelector := "div[class=relate_thumb]"
 
-				rnews := types.News{
-					URL:            util.EmptyIfNilString(a.MustAttribute("href")),
-					Title:          a.MustText(),
-					NewsPage:       pageNum,
-					Order:          idx,
-					SubOrder:       jdx + 1,
-					FullHTML:       dd.FullHTML(),
-					FullScreenShot: dd.FullScreenShot(),
-					TabScreenShot:  dd.TabScreenShot(pageNum),
-					Publisher:      rspan.MustText(),
+			if li.Has(relateSelector) {
+				for jdx, div := range li.El(relateSelector).Els("div[class=thumb_relate]") {
+					a := div.El("a")
+					rspan := div.El("span[class=info_news]")
+
+					rnews := types.News{
+						URL:            util.EmptyIfNilString(a.MustAttribute("href")),
+						Title:          a.MustText(),
+						NewsPage:       pageNum,
+						Order:          idx,
+						SubOrder:       jdx + 1,
+						FullHTML:       dd.FullHTML(),
+						FullScreenShot: dd.FullScreenShot(),
+						TabScreenShot:  dd.TabScreenShot(pageNum),
+						Publisher:      rspan.MustText(),
+					}
+
+					newsList = append(newsList, rnews)
 				}
-
-				newsList = append(newsList, rnews)
 			}
-
 		}
 	}
 
@@ -228,7 +237,7 @@ func (p *Portal) GetNewsHomeNews() ([]types.News, error) {
 
 	yDelta := p.El("#wrapMinidaum").Height()
 	yDelta += p.El("#kakaoHead").Height()
-	yDelta += 20
+	yDelta -= 24
 
 	headlineSelector := "div[class=box_headline]"
 	if true == newsArticleBlock.Has(headlineSelector) {
@@ -272,7 +281,7 @@ func (p *Portal) GetNewsHomeNews() ([]types.News, error) {
 	pageNum++
 
 	yDelta += newsArticleBlock.El("div[class=box_photo]").Height()
-	yDelta += 640
+	yDelta += 660
 
 	perUseSelector := "div[class=box_peruse] > div[class='pop_news pop_cmt']"
 	if true == newsArticleBlock.Has(perUseSelector) {
