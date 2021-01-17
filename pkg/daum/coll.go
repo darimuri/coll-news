@@ -90,7 +90,7 @@ func (p *Portal) GetTopNews() ([]types.News, error) {
 				continue
 			}
 
-			mediaBlock.MustScreenshot(dd.TabScreenShot(pageNum))
+			mediaBlock.ScreenShotElement(p.PageTemplate, dd.TabScreenShot(pageNum), 0)
 
 			groupNews := mediaBlock.El("div[class=group_news]")
 			for idx, item := range groupNews.Els("ul[class=list_thumb] > li") {
@@ -177,7 +177,7 @@ func (p *Portal) GetNewsHomeNews() ([]types.News, error) {
 	subListSelector := "ul[class=list_issue]"
 	if true == newsSubBlock.Has(subListSelector) {
 		subListBlock := newsSubBlock.El(subListSelector)
-		subListBlock.MustScreenshot(dd.TabScreenShot(pageNum))
+		subListBlock.ScreenShotElement(p.PageTemplate, dd.TabScreenShot(pageNum), 0)
 
 		for idx, li := range subListBlock.Els("li") {
 			imageItem := li.El("div[class=item_issue]")
@@ -233,8 +233,7 @@ func (p *Portal) GetNewsHomeNews() ([]types.News, error) {
 	headlineSelector := "div[class=box_headline]"
 	if true == newsArticleBlock.Has(headlineSelector) {
 		headlineBlock := newsArticleBlock.El(headlineSelector)
-		p.ScreenShot(headlineBlock, dd.TabScreenShot(pageNum), yDelta)
-		yDelta += headlineBlock.Height()
+		headlineBlock.ScreenShotElement(p.PageTemplate, dd.TabScreenShot(pageNum), yDelta)
 
 		for idx, ul := range headlineBlock.Els("ul[class=list_headline]") {
 			for jdx, li := range ul.Els("li") {
@@ -273,12 +272,12 @@ func (p *Portal) GetNewsHomeNews() ([]types.News, error) {
 	pageNum++
 
 	yDelta += newsArticleBlock.El("div[class=box_photo]").Height()
+	yDelta += 640
 
 	perUseSelector := "div[class=box_peruse] > div[class='pop_news pop_cmt']"
 	if true == newsArticleBlock.Has(perUseSelector) {
 		perBlock := newsArticleBlock.El(perUseSelector)
-		p.ScreenShot(perBlock, dd.TabScreenShot(pageNum), yDelta+110)
-		yDelta += perBlock.Height()
+		perBlock.ScreenShotElement(p.PageTemplate, dd.TabScreenShot(pageNum), yDelta)
 
 		myNewsList := extractPopNews(dd, perBlock, "ol[class=list_popcmt]", pageNum, 0)
 		newsList = append(newsList, myNewsList...)
@@ -289,9 +288,7 @@ func (p *Portal) GetNewsHomeNews() ([]types.News, error) {
 	perCmtSelector := "div[class='box_g box_popnews'] > div[class='pop_news pop_cmt']"
 	if true == newsArticleBlock.Has(perCmtSelector) {
 		perBlock := newsArticleBlock.El(perCmtSelector)
-		perBlock.MustScreenshot(dd.TabScreenShot(pageNum))
-		p.ScreenShot(perBlock, dd.TabScreenShot(pageNum), yDelta-90)
-		yDelta += perBlock.Height()
+		perBlock.ScreenShotElement(p.PageTemplate, dd.TabScreenShot(pageNum), yDelta)
 
 		myNewsList := extractPopNews(dd, perBlock, "ol[class=list_popcmt]", pageNum, 1)
 		newsList = append(newsList, myNewsList...)
@@ -299,11 +296,12 @@ func (p *Portal) GetNewsHomeNews() ([]types.News, error) {
 
 	pageNum++
 
+	yDelta += 60
+
 	perAgeSelector := "div[class='pop_news pop_age']"
 	if true == newsArticleBlock.Has(perAgeSelector) {
 		perBlock := newsArticleBlock.El(perAgeSelector)
-		p.ScreenShot(perBlock, dd.TabScreenShot(pageNum), yDelta-200)
-		yDelta += perBlock.Height()
+		perBlock.ScreenShotElement(p.PageTemplate, dd.TabScreenShot(pageNum), yDelta)
 
 		for idx, genderBlock := range perBlock.Els("div") {
 			myNewsList := extractPopNews(dd, genderBlock, "ul", pageNum, 2+idx)
