@@ -44,7 +44,7 @@ type DumpDirectory struct {
 func (d *DumpDirectory) Init() error {
 	d.dumpPath = path.Join(d.RootPath, d.DumpTime.Format("20060102"), d.Source)
 	d.dumpPrefix = d.DumpTime.Format("150405.000000000")
-	d.fullScreenShot = path.Join(d.dumpPath, fmt.Sprintf("%s.00.png", d.dumpPrefix))
+	d.fullScreenShot = path.Join(d.dumpPath, fmt.Sprintf("%s.00.jpg", d.dumpPrefix))
 	d.fullHTML = path.Join(d.dumpPath, fmt.Sprintf("%s.00.html", d.dumpPrefix))
 
 	info, err := os.Stat(d.dumpPath)
@@ -79,5 +79,5 @@ func (d *DumpDirectory) FullHTML() string {
 }
 
 func (d *DumpDirectory) TabScreenShot(tabNum int) string {
-	return path.Join(d.dumpPath, fmt.Sprintf("%s.tab.%02d.png", d.dumpPrefix, tabNum))
+	return path.Join(d.dumpPath, fmt.Sprintf("%s.tab.%02d.jpg", d.dumpPrefix, tabNum))
 }
