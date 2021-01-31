@@ -32,7 +32,7 @@ var _ = Describe("collect news", func() {
 	})
 
 	AfterEach(func() {
-		browser.Close()
+		_ = browser.Close()
 	})
 
 	Context("portal", func() {
@@ -51,7 +51,8 @@ var _ = Describe("collect news", func() {
 			Expect(newsList).ShouldNot(BeNil())
 			Expect(newsList).ShouldNot(BeEmpty())
 
-			for _, n := range newsList {
+			for idx := range newsList {
+				n := newsList[idx]
 				Expect(n.Title).ShouldNot(BeEmpty())
 				Expect(n.URL).ShouldNot(BeEmpty())
 				Expect(n.NewsPage).Should(BeNumerically(">", 0))
@@ -59,6 +60,9 @@ var _ = Describe("collect news", func() {
 				Expect(n.FullHTML).ShouldNot(BeEmpty())
 				Expect(n.FullScreenShot).ShouldNot(BeEmpty())
 				Expect(n.TabScreenShot).ShouldNot(BeEmpty())
+
+				err = cut.GetNewsEnd(&n)
+				Expect(err).Should(BeNil())
 			}
 		})
 
@@ -70,7 +74,8 @@ var _ = Describe("collect news", func() {
 			Expect(newsList).ShouldNot(BeNil())
 			Expect(newsList).ShouldNot(BeEmpty())
 
-			for _, n := range newsList {
+			for idx := range newsList {
+				n := newsList[idx]
 				Expect(n.Title).ShouldNot(BeEmpty())
 				Expect(n.URL).ShouldNot(BeEmpty())
 				Expect(n.NewsPage).Should(BeNumerically(">", 0))
@@ -78,6 +83,9 @@ var _ = Describe("collect news", func() {
 				Expect(n.FullHTML).ShouldNot(BeEmpty())
 				Expect(n.FullScreenShot).ShouldNot(BeEmpty())
 				Expect(n.TabScreenShot).ShouldNot(BeEmpty())
+
+				err = cut.GetNewsEnd(&n)
+				Expect(err).Should(BeNil())
 			}
 		})
 	})

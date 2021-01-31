@@ -19,6 +19,22 @@ type News struct {
 	FullScreenShot string `json:"full_screen_shot"`
 	TabScreenShot  string `json:"tab_screen_shot"`
 	Publisher      string `json:"publisher"`
+	End            *End   `json:"end"`
+}
+
+type End struct {
+	Category   string   `json:"category,omitempty"`
+	Provider   string   `json:"provider,omitempty"`
+	Title      string   `json:"title"`
+	Author     string   `json:"author"`
+	PostedAt   string   `json:"posted_at"`
+	ModifiedAt string   `json:"modified_at,omitempty"`
+	NumComment uint64   `json:"num_comment,omitempty"`
+	Text       string   `json:"text"`
+	HTML       string   `json:"html"`
+	Images     []string `json:"images,omitempty"`
+	Program    string   `json:"program,omitempty"`
+	NumPlayed  uint64   `json:"num_played"`
 }
 
 func (n *News) ToString() string {
