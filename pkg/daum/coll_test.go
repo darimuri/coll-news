@@ -62,7 +62,7 @@ var _ = Describe("collect news", func() {
 				Expect(n.TabScreenShot).ShouldNot(BeEmpty())
 
 				err = cut.GetNewsEnd(&n)
-				Expect(err).Should(BeNil())
+				Expect(err).Should(BeNil(), "err getting top news end %v", n)
 			}
 		})
 
@@ -85,7 +85,7 @@ var _ = Describe("collect news", func() {
 				Expect(n.TabScreenShot).ShouldNot(BeEmpty())
 
 				err = cut.GetNewsEnd(&n)
-				Expect(err).Should(BeNil())
+				Expect(err).Should(BeNil(), "err getting new home news end %v", n)
 			}
 		})
 	})
