@@ -2,15 +2,16 @@ package daum
 
 import (
 	"github.com/go-rod/rod"
+	"github.com/go-rod/rod/lib/devices"
 	"github.com/go-rod/rod/lib/launcher"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/darimuri/coll-news/pkg/daum/pc"
+	"github.com/darimuri/coll-news/pkg/daum/mobile"
 	"github.com/darimuri/coll-news/pkg/test"
 )
 
-var _ = Describe("collect news pc", func() {
+var _ = FDescribe("collect news mobile", func() {
 	var browser *rod.Browser
 	var cut *Portal
 
@@ -23,7 +24,7 @@ var _ = Describe("collect news pc", func() {
 
 		Expect(err).Should(BeNil())
 
-		browser = rod.New()
+		browser = rod.New().DefaultDevice(devices.IPhone6or7or8)
 		err = browser.
 			ControlURL(url).
 			//Trace(true).
@@ -40,7 +41,7 @@ var _ = Describe("collect news pc", func() {
 
 		BeforeEach(func() {
 			var err error
-			cut, err = NewPortal(browser, PC(), pc.New(), "../../test")
+			cut, err = NewPortal(browser, Mobile(), mobile.New(), "../../test")
 			Expect(err).Should(BeNil())
 		})
 
@@ -63,7 +64,7 @@ var _ = Describe("collect news pc", func() {
 				Expect(n.TabScreenShot).ShouldNot(BeEmpty())
 
 				err = cut.GetNewsEnd(&n)
-				Expect(err).Should(BeNil(), "err getting top news end %v", n)
+				Expect(err).Should(BeNil(), "error getting top news end %v", n)
 			}
 		})
 
