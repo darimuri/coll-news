@@ -1,6 +1,7 @@
 package daum
 
 import (
+	"github.com/darimuri/coll-news/pkg/types"
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/launcher"
 	. "github.com/onsi/ginkgo"
@@ -12,7 +13,7 @@ import (
 
 var _ = Describe("collect news pc", func() {
 	var browser *rod.Browser
-	var cut *Portal
+	var cut types.Collector
 
 	BeforeEach(func() {
 		url, err := launcher.New().
@@ -40,7 +41,7 @@ var _ = Describe("collect news pc", func() {
 
 		BeforeEach(func() {
 			var err error
-			cut, err = NewPortal(browser, PC(), pc.New(), "../../test")
+			cut, err = NewPortal(browser, types.PC(), pc.New(), "../../test")
 			Expect(err).Should(BeNil())
 		})
 

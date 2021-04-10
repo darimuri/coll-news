@@ -8,7 +8,7 @@ import (
 
 var Command = &cobra.Command{
 	Use:   "version",
-	Short: "Print the version number news coll",
+	Short: "Print the version number",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("Portal News Collector v0.1 -- HEAD")
 	},

@@ -6,7 +6,6 @@ import (
 
 	"github.com/dormael/go-lib/rodtemplate"
 
-	_interface "github.com/darimuri/coll-news/pkg/daum/interface"
 	"github.com/darimuri/coll-news/pkg/types"
 	"github.com/darimuri/coll-news/pkg/util"
 )
@@ -16,7 +15,7 @@ const (
 	newsTabSelector  = "div[class=page_tabcont]"
 )
 
-var _ _interface.Collector = (*pc)(nil)
+var _ types.TypedCollector = (*pc)(nil)
 
 type pc struct {
 }

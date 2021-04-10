@@ -12,10 +12,11 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:   "news",
-	Short: "Collect portal news in a given duration",
+	Short: "Collect portal news in a given period",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return nil
 	},
+	Args: cobra.MinimumNArgs(1),
 }
 
 func main() {

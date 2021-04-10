@@ -11,7 +11,6 @@ import (
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/cdp"
 
-	_interface "github.com/darimuri/coll-news/pkg/daum/interface"
 	"github.com/darimuri/coll-news/pkg/types"
 	"github.com/darimuri/coll-news/pkg/util"
 )
@@ -21,34 +20,21 @@ const (
 	newsHomeURL = "https://news.daum.net/"
 )
 
-type Profile struct {
-	width  int
-	height int
-
-	_interface.Collector
-}
-
-func PC() Profile {
-	return Profile{
-		width:  1920,
-		height: 1080,
-	}
-}
-
-func Mobile() Profile {
-	return Profile{
-		width:  640,
-		height: 1080,
-	}
-}
+var _ types.Collector = (*Portal)(nil)
 
 type Portal struct {
 	*rt.BrowserTemplate
 	*rt.PageTemplate
 
-	profile   Profile
-	collector _interface.Collector
+	profile   types.Profile
+	collector types.TypedCollector
 	dumpRoot  string
+}
+
+func (p *Portal) Cleanup() {
+	for _, pg := range p.MustPages() {
+		pg.MustClose()
+	}
 }
 
 func (p *Portal) Top() {
@@ -62,7 +48,7 @@ func (p *Portal) NewsHome() {
 func (p *Portal) open(url string) {
 	page := p.BrowserTemplate.MustPage(url)
 	p.PageTemplate = rt.NewPageTemplate(page)
-	p.SetViewport(p.profile.width, p.profile.height)
+	p.SetViewport(p.profile.Width, p.profile.Height)
 
 	if err := page.WaitLoad(); err != nil {
 		if false == cdp.ErrCtxDestroyed.Is(err) {
@@ -82,7 +68,7 @@ func (p *Portal) open(url string) {
 func (p *Portal) openTab(url string) {
 	page := p.BrowserTemplate.MustPages().First().MustNavigate(url)
 	p.PageTemplate = rt.NewPageTemplate(page)
-	p.SetViewport(p.profile.width, p.profile.height)
+	p.SetViewport(p.profile.Width, p.profile.Height)
 
 	if err := page.WaitLoad(); err != nil {
 		if false == cdp.ErrCtxDestroyed.Is(err) {
@@ -177,9 +163,17 @@ func (p *Portal) GetNewsEnd(n *types.News) (retErr error) {
 		default:
 			retErr = fmt.Errorf("errorless panic %+v", v)
 		}
+
 	}()
 
-	contentBlock := p.SelectOrPanic("div[id=kakaoContent]")
+	var contentBlock *rt.ElementTemplate
+
+	if p.Has("div[id=daumContent]") {
+		contentBlock = p.SelectOrPanic("div[id=daumContent]")
+	} else {
+		contentBlock = p.SelectOrPanic("div[id=kakaoContent]")
+	}
+
 	mainBlockSelector := "div[id=cMain]"
 	if false == contentBlock.Has(mainBlockSelector) {
 		log.Printf("main block %s is missing in %s\n", mainBlockSelector, n.URL)
@@ -254,6 +248,8 @@ func (p *Portal) GetNewsEnd(n *types.News) (retErr error) {
 		}
 	} else if true == mArticleBlock.Has("div[class=photo_view]") {
 		log.Println("skip collect end of photo view")
+	} else if true == contentBlock.Has("div[class=view_vod]") {
+		log.Println("skip to collect new end for", n.URL)
 	} else {
 		return fmt.Errorf("failed to collect new end for %s", n.URL)
 	}
@@ -261,7 +257,7 @@ func (p *Portal) GetNewsEnd(n *types.News) (retErr error) {
 	return nil
 }
 
-func NewPortal(browser *rod.Browser, profile Profile, collector _interface.Collector, dumpRoot string) (*Portal, error) {
+func NewPortal(browser *rod.Browser, profile types.Profile, collector types.TypedCollector, dumpRoot string) (types.Collector, error) {
 	s := &Portal{BrowserTemplate: rt.NewBrowserTemplate(browser), profile: profile, collector: collector, dumpRoot: dumpRoot}
 
 	return s, nil

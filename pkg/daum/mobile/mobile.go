@@ -5,7 +5,6 @@ import (
 
 	"github.com/dormael/go-lib/rodtemplate"
 
-	_interface "github.com/darimuri/coll-news/pkg/daum/interface"
 	"github.com/darimuri/coll-news/pkg/types"
 	"github.com/darimuri/coll-news/pkg/util"
 )
@@ -14,7 +13,7 @@ const (
 	topNewsTabSelector = "div[id=channel_news1_top]"
 )
 
-var _ _interface.Collector = (*mobile)(nil)
+var _ types.TypedCollector = (*mobile)(nil)
 
 type mobile struct {
 }

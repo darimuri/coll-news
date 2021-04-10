@@ -97,3 +97,24 @@ func (d *DumpDirectory) FullHTML() string {
 func (d *DumpDirectory) TabScreenShot(tabNum int) string {
 	return path.Join(d.dumpPath, fmt.Sprintf("%s.tab.%02d.jpg", d.dumpPrefix, tabNum))
 }
+
+type Profile struct {
+	Width  int
+	Height int
+
+	TypedCollector
+}
+
+func PC() Profile {
+	return Profile{
+		Width:  1920,
+		Height: 1080,
+	}
+}
+
+func Mobile() Profile {
+	return Profile{
+		Width:  640,
+		Height: 1080,
+	}
+}
