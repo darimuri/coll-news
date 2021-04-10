@@ -12,6 +12,7 @@ type News struct {
 	URL            string `json:"url"`
 	Image          string `json:"image,omitempty"`
 	Title          string `json:"title"`
+	SeriesTitle    string `json:"series_title,omitempty"`
 	NewsPage       int    `json:"news_page"`
 	Order          int    `json:"order"`
 	SubOrder       int    `json:"sub_order"`

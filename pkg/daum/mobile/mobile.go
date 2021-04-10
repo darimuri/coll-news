@@ -2,6 +2,7 @@ package mobile
 
 import (
 	"log"
+	"strings"
 
 	"github.com/dormael/go-lib/rodtemplate"
 
@@ -34,6 +35,7 @@ func (_ mobile) GetTopNews(p *rodtemplate.PageTemplate, dd types.DumpDirectory) 
 	textListSelector := "ul.list_txt"
 	thumbListSelector := "ul.list_thumb"
 	horizonBlockSelector := "ul.list_horizon"
+	themeBlockSelector := "ul.list_theme"
 	//adBlockSelector := "div.mtop_adfit_channel_news1"
 
 	//yDelta := 0.0
@@ -52,7 +54,18 @@ func (_ mobile) GetTopNews(p *rodtemplate.PageTemplate, dd types.DumpDirectory) 
 		} else if true == b.Has(thumbListSelector) {
 			items = b.El(thumbListSelector).Els("li")
 			parser = parseThumbItem
-
+		} else if true == b.Has(themeBlockSelector) {
+			themeBlocks := b.Els(themeBlockSelector)
+			items = make([]*rodtemplate.ElementTemplate, 0)
+			for _, tb := range themeBlocks {
+				if false == tb.Has("li") {
+					continue
+				}
+				for _, item := range tb.Els("li") {
+					items = append(items, item)
+				}
+			}
+			parser = parseThemeItem
 		} else {
 			log.Println("failed to get news items from news block", b.MustHTML())
 			continue
@@ -97,6 +110,30 @@ func (_ mobile) GetTopNews(p *rodtemplate.PageTemplate, dd types.DumpDirectory) 
 	}
 
 	return newsList, nil
+}
+
+func parseThemeItem(item *rodtemplate.ElementTemplate, idx int) types.News {
+	contentBlock := item.El("div[class=cont_item]")
+	titleBlock := contentBlock.El("strong[class=tit_item]")
+
+	var title, seriesTitle string
+	if titleBlock.Has("em") {
+		seriesBlock := titleBlock.El("em")
+		seriesTitle = seriesBlock.MustText()
+
+		title = strings.ReplaceAll(titleBlock.MustText(), seriesTitle, "")
+	} else {
+		title = titleBlock.MustText()
+	}
+
+	news := types.News{
+		URL:         util.AnchorHREF(item),
+		Title:       title,
+		SeriesTitle: seriesTitle,
+		Publisher:   contentBlock.El("span").MustText(),
+		Order:       idx,
+	}
+	return news
 }
 
 func parseThumbItem(item *rodtemplate.ElementTemplate, idx int) types.News {
