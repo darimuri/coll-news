@@ -41,7 +41,7 @@ var _ = Describe("collect news pc", func() {
 
 		BeforeEach(func() {
 			var err error
-			cut, err = NewPortal(browser, types.PC(), pc.New(), "../../test")
+			cut, err = NewPortal(browser, types.PC(), pc.New(), "../../test/daum/pc")
 			Expect(err).Should(BeNil())
 		})
 

@@ -14,6 +14,7 @@ type Collector interface {
 }
 
 type TypedCollector interface {
-	GetTopNews(pageTemplate *rodtemplate.PageTemplate, dd DumpDirectory) ([]News, error)
-	GetNewsHomeNews(pageTemplate *rodtemplate.PageTemplate, dd DumpDirectory) ([]News, error)
+	GetTopNews(p *rodtemplate.PageTemplate, dd DumpDirectory) ([]News, error)
+	GetNewsHomeNews(p *rodtemplate.PageTemplate, dd DumpDirectory) ([]News, error)
+	GetNewsEnd(p *rodtemplate.PageTemplate, n *News) error
 }
