@@ -7,14 +7,15 @@ import (
 type Collector interface {
 	Top()
 	NewsHome()
-	GetTopNews() ([]News, error)
-	GetNewsHomeNews() ([]News, error)
+	GetTopNewsList() ([]News, error)
+	GetNewsHomeNewsList() ([]News, error)
 	GetNewsEnd(n *News) error
 	Cleanup()
 }
 
 type TypedCollector interface {
-	GetTopNews(p *rodtemplate.PageTemplate, dd DumpDirectory) ([]News, error)
-	GetNewsHomeNews(p *rodtemplate.PageTemplate, dd DumpDirectory) ([]News, error)
+	PrepareNewsHomeScreenShot(p *rodtemplate.PageTemplate)
+	GetNewsHomeNewsList(p *rodtemplate.PageTemplate, dd DumpDirectory) ([]News, error)
+	GetTopNewsList(p *rodtemplate.PageTemplate, dd DumpDirectory) ([]News, error)
 	GetNewsEnd(p *rodtemplate.PageTemplate, n *News) error
 }

@@ -5,6 +5,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/dormael/go-lib/rodtemplate"
 	rt "github.com/dormael/go-lib/rodtemplate"
@@ -22,6 +23,233 @@ var _ types.TypedCollector = (*mobile)(nil)
 type mobile struct {
 }
 
+func (_ mobile) PrepareNewsHomeScreenShot(p *rt.PageTemplate) {
+	mainBlockSelector := "main[id=kakaoContent]"
+	if false == p.Has(mainBlockSelector) {
+		return
+	}
+	mainBlock := p.SelectOrPanic(mainBlockSelector)
+	sectionMainBlock := mainBlock.SelectOrPanic("div.section_main")
+	mainNewsSelector := "div[data-tiara-layer=MAIN_NEWS]"
+	if true == sectionMainBlock.Has(mainNewsSelector) {
+		mainNewsBlock := mainBlock.SelectOrPanic(mainNewsSelector)
+
+		p.ScrollTo(mainNewsBlock)
+		p.WaitRepaint()
+
+		moreSelector := "a.link_more"
+		if true == mainNewsBlock.Has(moreSelector) {
+			for mainNewsBlock.El(moreSelector).MustVisible() {
+				mainNewsBlock.El(moreSelector).MustClick()
+				p.WaitRepaint()
+
+				time.Sleep(100 * time.Microsecond)
+			}
+		}
+	}
+}
+
+func (_ mobile) GetNewsHomeNewsList(p *rodtemplate.PageTemplate, dd types.DumpDirectory) ([]types.News, error) {
+	newsList := make([]types.News, 0)
+
+	mainBlockSelector := "main[id=kakaoContent]"
+	if false == p.Has(mainBlockSelector) {
+		return newsList, nil
+	}
+
+	pageNum := 1
+	mainBlock := p.SelectOrPanic(mainBlockSelector)
+	sectionMainBlock := mainBlock.SelectOrPanic("div.section_main")
+	sectionSubBlock := mainBlock.SelectOrPanic("div.section_sub")
+
+	homeIssueSelector := "div.box_homeissue"
+	if true == sectionMainBlock.Has(homeIssueSelector) {
+		homeIssueBlock := sectionMainBlock.SelectOrPanic(homeIssueSelector)
+		for idx, b := range homeIssueBlock.Els("ul.list_homeissue > li") {
+			contBlock := b.El("div.cont_thumb")
+			contMain := contBlock.El("span.inner_link")
+			n1 := types.News{
+				NewsPage:       pageNum,
+				Order:          idx,
+				SubOrder:       0,
+				Publisher:      contMain.El("span.txt_cp").MustText(),
+				Title:          contMain.El("strong.tit_thumb").MustText(),
+				URL:            util.AnchorHREF(contBlock),
+				Image:          util.ImgSrc(b.El("div.wrap_thumb")),
+				FullHTML:       dd.FullHTML(),
+				FullScreenShot: dd.FullScreenShot(),
+			}
+			newsList = append(newsList, n1)
+
+			subBlock := b.El("div.cont_sub")
+			contSub := subBlock.El("span.inner_link")
+			n2 := types.News{
+				NewsPage:       pageNum,
+				Order:          idx,
+				SubOrder:       1,
+				Publisher:      contSub.El("span.txt_cp").MustText(),
+				Title:          contSub.El("span.tit_sub").MustText(),
+				URL:            util.AnchorHREF(subBlock),
+				FullHTML:       dd.FullHTML(),
+				FullScreenShot: dd.FullScreenShot(),
+			}
+			newsList = append(newsList, n2)
+		}
+	}
+
+	pageNum++
+	mainNewsSelector := "div[data-tiara-layer=MAIN_NEWS]"
+	if true == sectionMainBlock.Has(mainNewsSelector) {
+		mainNewsBlock := mainBlock.SelectOrPanic(mainNewsSelector)
+
+		p.ScrollTo(mainNewsBlock)
+		p.WaitRepaint()
+
+		order := newsList[len(newsList)-1].Order + 1
+
+		newsList = append(newsList, parseNewsList(mainNewsBlock, pageNum, order, dd)...)
+	}
+
+	subSectionSelectors := []string{
+		"div[data-tiara-layer=POPULAR]",
+		"div[data-tiara-layer=DRI]",
+		"div.box_cmtrank",
+	}
+
+	for _, selector := range subSectionSelectors {
+		pageNum++
+		if true == sectionSubBlock.Has(selector) {
+			popularBlock := sectionSubBlock.SelectOrPanic(selector)
+
+			p.ScrollTo(popularBlock)
+			p.WaitRepaint()
+
+			order := newsList[len(newsList)-1].Order + 1
+
+			items := parseNewsList(popularBlock, pageNum, order, dd)
+			newsList = append(newsList, items...)
+		}
+	}
+
+	if sectionSubBlock.Has("div.box_agenews > ul > li") {
+		//this list is not order properly(should be appeared one step earlier)
+		for _, t := range sectionSubBlock.Els("div.box_agenews > ul > li") {
+			t.MustClick()
+			p.WaitRepaint()
+
+			order := newsList[len(newsList)-1].Order + 1
+
+			for idx, b := range sectionSubBlock.Els("div.tab_slide > div.slide > div.panel > ul.list_news > div.slide > div.panel > li") {
+				n := types.News{
+					NewsPage:       pageNum,
+					Order:          order,
+					SubOrder:       idx,
+					Title:          b.MustText(),
+					URL:            util.AnchorHREF(b),
+					FullHTML:       dd.FullHTML(),
+					FullScreenShot: dd.FullScreenShot(),
+				}
+				newsList = append(newsList, n)
+			}
+		}
+	}
+
+	return newsList, nil
+}
+
+func (_ mobile) GetTopNewsList(p *rodtemplate.PageTemplate, dd types.DumpDirectory) ([]types.News, error) {
+	newsList := make([]types.News, 0)
+
+	if false == p.Has(topNewsTabSelector) {
+		return newsList, nil
+	}
+
+	newsBlocksSelector := "div._box_feed_news1"
+	if false == p.Has(newsBlocksSelector) {
+		return newsList, nil
+	}
+
+	pageNum := 1
+	textListSelector := "ul.list_txt"
+	thumbListSelector := "ul.list_thumb"
+	horizonBlockSelector := "ul.list_horizon"
+	themeBlockSelector := "ul.list_theme"
+	//adBlockSelector := "div.mtop_adfit_channel_news1"
+
+	//yDelta := 0.0
+	//adBlocks := p.Els(adBlockSelector)
+
+	newsBlocks := p.Els(newsBlocksSelector)
+	for _, b := range newsBlocks {
+		var parser func(item *rodtemplate.ElementTemplate, idx int) types.News
+		var items rodtemplate.ElementsTemplate
+		if true == b.Has(textListSelector) {
+			items = b.El(textListSelector).Els("li")
+			parser = parseTextItem
+		} else if true == b.Has(horizonBlockSelector) {
+			items = b.El(horizonBlockSelector).Els("li")
+			parser = parseHorizonItem
+		} else if true == b.Has(thumbListSelector) {
+			items = b.El(thumbListSelector).Els("li")
+			parser = parseThumbItem
+		} else if true == b.Has(themeBlockSelector) {
+			themeBlocks := b.Els(themeBlockSelector)
+			items = make([]*rodtemplate.ElementTemplate, 0)
+			for _, tb := range themeBlocks {
+				if false == tb.Has("li") {
+					continue
+				}
+				for _, item := range tb.Els("li") {
+					items = append(items, item)
+				}
+			}
+			parser = parseThemeItem
+		} else {
+			log.Println("failed to get news items from news block", b.MustHTML())
+			continue
+		}
+
+		if parser != nil && items != nil {
+			p.ScrollTo(b)
+			p.WaitRepaint()
+
+			for idx, item := range items {
+				news := parser(item, idx)
+
+				news.NewsPage = pageNum
+				news.FullHTML = dd.FullHTML()
+				news.FullScreenShot = dd.FullScreenShot()
+				//news.TabScreenShot = dd.TabScreenShot(pageNum)
+
+				newsList = append(newsList, news)
+			}
+
+			//if bidx > 0 && bidx < len(adBlocks) {
+			//	if adBlocks[bidx-1].MustVisible() {
+			//		yDelta += adBlocks[bidx-1].Height()
+			//	}
+			//}
+			//
+			//myDelta := 0.0
+			//if bidx == 2 {
+			//	myDelta += p.GetVisibleHeight("div.d_head")
+			//	myDelta += p.GetVisibleHeight("div.disaster_weather")
+			//	myDelta += p.GetVisibleHeight("div.slidebox_menu") * 2
+			//	myDelta += p.GetVisibleHeight("div.box_promotion")
+			//	myDelta += p.GetVisibleHeight("div.ibox_issue")
+			//	myDelta += p.GetVisibleHeight("div.tb_txt")
+			//	myDelta += p.GetVisibleHeight("div.box_direct")
+			//}
+			//yDelta += myDelta
+			//
+			//p.ScreenShot(b, dd.TabScreenShot(pageNum), yDelta)
+			pageNum++
+		}
+	}
+
+	return newsList, nil
+}
+
 func (_ mobile) GetNewsEnd(p *rodtemplate.PageTemplate, n *types.News) error {
 	var contentBlock *rt.ElementTemplate
 
@@ -34,6 +262,8 @@ func (_ mobile) GetNewsEnd(p *rodtemplate.PageTemplate, n *types.News) error {
 		contentBlock = p.SelectOrPanic(kakaoSelector)
 	} else if p.Has(daumSelector) {
 		contentBlock = p.SelectOrPanic(daumSelector)
+	} else {
+		return fmt.Errorf("failed to find content block from url %s", n.URL)
 	}
 
 	articleBlockSelector := "article[id=mArticle]"
@@ -150,207 +380,6 @@ func (_ mobile) GetNewsEnd(p *rodtemplate.PageTemplate, n *types.News) error {
 	}
 
 	return nil
-}
-
-func (_ mobile) GetTopNews(p *rodtemplate.PageTemplate, dd types.DumpDirectory) ([]types.News, error) {
-	newsList := make([]types.News, 0)
-
-	if false == p.Has(topNewsTabSelector) {
-		return newsList, nil
-	}
-
-	newsBlocksSelector := "div._box_feed_news1"
-	if false == p.Has(newsBlocksSelector) {
-		return newsList, nil
-	}
-
-	pageNum := 1
-	textListSelector := "ul.list_txt"
-	thumbListSelector := "ul.list_thumb"
-	horizonBlockSelector := "ul.list_horizon"
-	themeBlockSelector := "ul.list_theme"
-	//adBlockSelector := "div.mtop_adfit_channel_news1"
-
-	//yDelta := 0.0
-	//adBlocks := p.Els(adBlockSelector)
-
-	newsBlocks := p.Els(newsBlocksSelector)
-	for _, b := range newsBlocks {
-		var parser func(item *rodtemplate.ElementTemplate, idx int) types.News
-		var items rodtemplate.ElementsTemplate
-		if true == b.Has(textListSelector) {
-			items = b.El(textListSelector).Els("li")
-			parser = parseTextItem
-		} else if true == b.Has(horizonBlockSelector) {
-			items = b.El(horizonBlockSelector).Els("li")
-			parser = parseHorizonItem
-		} else if true == b.Has(thumbListSelector) {
-			items = b.El(thumbListSelector).Els("li")
-			parser = parseThumbItem
-		} else if true == b.Has(themeBlockSelector) {
-			themeBlocks := b.Els(themeBlockSelector)
-			items = make([]*rodtemplate.ElementTemplate, 0)
-			for _, tb := range themeBlocks {
-				if false == tb.Has("li") {
-					continue
-				}
-				for _, item := range tb.Els("li") {
-					items = append(items, item)
-				}
-			}
-			parser = parseThemeItem
-		} else {
-			log.Println("failed to get news items from news block", b.MustHTML())
-			continue
-		}
-
-		if parser != nil && items != nil {
-			p.ScrollTo(b)
-			p.WaitRepaint()
-
-			for idx, item := range items {
-				news := parser(item, idx)
-
-				news.NewsPage = pageNum
-				news.FullHTML = dd.FullHTML()
-				news.FullScreenShot = dd.FullScreenShot()
-				//news.TabScreenShot = dd.TabScreenShot(pageNum)
-
-				newsList = append(newsList, news)
-			}
-
-			//if bidx > 0 && bidx < len(adBlocks) {
-			//	if adBlocks[bidx-1].MustVisible() {
-			//		yDelta += adBlocks[bidx-1].Height()
-			//	}
-			//}
-			//
-			//myDelta := 0.0
-			//if bidx == 2 {
-			//	myDelta += p.GetVisibleHeight("div.d_head")
-			//	myDelta += p.GetVisibleHeight("div.disaster_weather")
-			//	myDelta += p.GetVisibleHeight("div.slidebox_menu") * 2
-			//	myDelta += p.GetVisibleHeight("div.box_promotion")
-			//	myDelta += p.GetVisibleHeight("div.ibox_issue")
-			//	myDelta += p.GetVisibleHeight("div.tb_txt")
-			//	myDelta += p.GetVisibleHeight("div.box_direct")
-			//}
-			//yDelta += myDelta
-			//
-			//p.ScreenShot(b, dd.TabScreenShot(pageNum), yDelta)
-			pageNum++
-		}
-	}
-
-	return newsList, nil
-}
-
-func (_ mobile) GetNewsHomeNews(p *rodtemplate.PageTemplate, dd types.DumpDirectory) ([]types.News, error) {
-	newsList := make([]types.News, 0)
-
-	mainBlockSelector := "main[id=kakaoContent]"
-	if false == p.Has(mainBlockSelector) {
-		return newsList, nil
-	}
-
-	pageNum := 1
-	mainBlock := p.SelectOrPanic(mainBlockSelector)
-	sectionMainBlock := mainBlock.SelectOrPanic("div.section_main")
-	sectionSubBlock := mainBlock.SelectOrPanic("div.section_sub")
-
-	homeIssueSelector := "div.box_homeissue"
-	if true == sectionMainBlock.Has(homeIssueSelector) {
-		homeIssueBlock := sectionMainBlock.SelectOrPanic(homeIssueSelector)
-		for idx, b := range homeIssueBlock.Els("ul.list_homeissue > li") {
-			contBlock := b.El("div.cont_thumb")
-			contMain := contBlock.El("span.inner_link")
-			n1 := types.News{
-				NewsPage:       pageNum,
-				Order:          idx,
-				SubOrder:       0,
-				Publisher:      contMain.El("span.txt_cp").MustText(),
-				Title:          contMain.El("strong.tit_thumb").MustText(),
-				URL:            util.AnchorHREF(contBlock),
-				Image:          util.ImgSrc(b.El("div.wrap_thumb")),
-				FullHTML:       dd.FullHTML(),
-				FullScreenShot: dd.FullScreenShot(),
-			}
-			newsList = append(newsList, n1)
-
-			subBlock := b.El("div.cont_sub")
-			contSub := subBlock.El("span.inner_link")
-			n2 := types.News{
-				NewsPage:       pageNum,
-				Order:          idx,
-				SubOrder:       1,
-				Publisher:      contSub.El("span.txt_cp").MustText(),
-				Title:          contSub.El("span.tit_sub").MustText(),
-				URL:            util.AnchorHREF(subBlock),
-				FullHTML:       dd.FullHTML(),
-				FullScreenShot: dd.FullScreenShot(),
-			}
-			newsList = append(newsList, n2)
-		}
-	}
-
-	pageNum++
-	mainNewsSelector := "div[data-tiara-layer=MAIN_NEWS]"
-	if true == sectionMainBlock.Has(homeIssueSelector) {
-		mainNewsBlock := mainBlock.SelectOrPanic(mainNewsSelector)
-
-		p.ScrollTo(mainNewsBlock)
-		p.WaitRepaint()
-
-		order := newsList[len(newsList)-1].Order + 1
-
-		newsList = append(newsList, parseNewsList(mainNewsBlock, pageNum, order, dd)...)
-	}
-
-	subSectionSelectors := []string{
-		"div[data-tiara-layer=POPULAR]",
-		"div[data-tiara-layer=DRI]",
-		"div.box_cmtrank",
-	}
-
-	for _, selector := range subSectionSelectors {
-		pageNum++
-		if true == sectionSubBlock.Has(selector) {
-			popularBlock := sectionSubBlock.SelectOrPanic(selector)
-
-			p.ScrollTo(popularBlock)
-			p.WaitRepaint()
-
-			order := newsList[len(newsList)-1].Order + 1
-
-			items := parseNewsList(popularBlock, pageNum, order, dd)
-			newsList = append(newsList, items...)
-		}
-	}
-
-	if sectionSubBlock.Has("div.box_agenews > ul > li") {
-		//this list is not order properly(should be appeared one step earlier)
-		for _, t := range sectionSubBlock.Els("div.box_agenews > ul > li") {
-			t.MustClick()
-			p.WaitRepaint()
-
-			order := newsList[len(newsList)-1].Order + 1
-
-			for idx, b := range sectionSubBlock.Els("div.tab_slide > div.slide > div.panel > ul.list_news > div.slide > div.panel > li") {
-				n := types.News{
-					NewsPage:       pageNum,
-					Order:          order,
-					SubOrder:       idx,
-					Title:          b.MustText(),
-					URL:            util.AnchorHREF(b),
-					FullHTML:       dd.FullHTML(),
-					FullScreenShot: dd.FullScreenShot(),
-				}
-				newsList = append(newsList, n)
-			}
-		}
-	}
-
-	return newsList, nil
 }
 
 func parseNewsList(listBlock *rt.ElementTemplate, pageNum int, order int, dd types.DumpDirectory) []types.News {

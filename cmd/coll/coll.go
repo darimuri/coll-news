@@ -40,8 +40,11 @@ func init() {
 	Command.Flags().StringVarP(&collectSavePath, "save-path", "s", "", "save path for collected data")
 	Command.Flags().BoolVarP(&disableHeadless, "no-headless", "", false, "collect news in non-headless mode")
 
+	//goland:noinspection GoUnhandledErrorResult
 	Command.MarkFlagRequired("type")
+	//goland:noinspection GoUnhandledErrorResult
 	Command.MarkFlagRequired("news-source")
+	//goland:noinspection GoUnhandledErrorResult
 	Command.MarkFlagRequired("save-path")
 }
 
@@ -81,7 +84,7 @@ func collectAndSave(c types.Collector, collError chan error) {
 	log.Println("collect")
 
 	c.Top()
-	news, err := c.GetTopNews()
+	news, err := c.GetTopNewsList()
 	if err != nil {
 		collError <- err
 		return
@@ -95,7 +98,7 @@ func collectAndSave(c types.Collector, collError chan error) {
 	}
 
 	c.NewsHome()
-	news, err = c.GetNewsHomeNews()
+	news, err = c.GetNewsHomeNewsList()
 	if err != nil {
 		collError <- err
 		return

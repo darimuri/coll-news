@@ -83,7 +83,7 @@ func (p *Portal) openTab(url string) {
 	}
 }
 
-func (p *Portal) GetTopNews() (news []types.News, retErr error) {
+func (p *Portal) GetTopNewsList() (news []types.News, retErr error) {
 	defer func() {
 		v := recover()
 		if v == nil {
@@ -113,10 +113,10 @@ func (p *Portal) GetTopNews() (news []types.News, retErr error) {
 		return nil, err
 	}
 
-	return p.collector.GetTopNews(p.PageTemplate, dd)
+	return p.collector.GetTopNewsList(p.PageTemplate, dd)
 }
 
-func (p *Portal) GetNewsHomeNews() (news []types.News, retErr error) {
+func (p *Portal) GetNewsHomeNewsList() (news []types.News, retErr error) {
 	defer func() {
 		v := recover()
 		if v == nil {
@@ -136,6 +136,7 @@ func (p *Portal) GetNewsHomeNews() (news []types.News, retErr error) {
 		return nil, err
 	}
 
+	p.collector.PrepareNewsHomeScreenShot(p.PageTemplate)
 	p.PageTemplate.ScreenShotFull(dd.FullScreenShot())
 
 	err := ioutil.WriteFile(dd.FullHTML(), []byte(p.PageTemplate.HTML()), 0644)
@@ -143,7 +144,7 @@ func (p *Portal) GetNewsHomeNews() (news []types.News, retErr error) {
 		return nil, err
 	}
 
-	return p.collector.GetNewsHomeNews(p.PageTemplate, dd)
+	return p.collector.GetNewsHomeNewsList(p.PageTemplate, dd)
 }
 
 func (p *Portal) GetNewsEnd(n *types.News) (retErr error) {

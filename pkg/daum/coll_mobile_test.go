@@ -49,7 +49,7 @@ var _ = Describe("collect news mobile", func() {
 		It("top news", func() {
 			cut.Top()
 
-			newsList, err := cut.GetTopNews()
+			newsList, err := cut.GetTopNewsList()
 			Expect(err).Should(BeNil())
 			Expect(newsList).ShouldNot(BeNil())
 			Expect(newsList).ShouldNot(BeEmpty())
@@ -72,7 +72,7 @@ var _ = Describe("collect news mobile", func() {
 		FIt("news home news", func() {
 			cut.NewsHome()
 
-			newsList, err := cut.GetNewsHomeNews()
+			newsList, err := cut.GetNewsHomeNewsList()
 			Expect(err).Should(BeNil())
 			Expect(newsList).ShouldNot(BeNil())
 			Expect(newsList).ShouldNot(BeEmpty())
