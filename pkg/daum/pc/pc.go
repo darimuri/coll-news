@@ -260,6 +260,8 @@ func (_ *pc) GetNewsEnd(p *rt.PageTemplate, n *types.News) error {
 
 	if p.Has("div[id=daumContent]") {
 		contentBlock = p.SelectOrPanic("div[id=daumContent]")
+	} else if p.Has("main[id=daumContent]") {
+		contentBlock = p.SelectOrPanic("main[id=daumContent]")
 	} else {
 		contentBlock = p.SelectOrPanic("div[id=kakaoContent]")
 	}
@@ -339,7 +341,7 @@ func (_ *pc) GetNewsEnd(p *rt.PageTemplate, n *types.News) error {
 	} else if true == mArticleBlock.Has("div[class=photo_view]") {
 		log.Println("skip collect end of photo view")
 	} else if true == contentBlock.Has("div[class=view_vod]") {
-		log.Println("skip to collect new end for", n.URL)
+		log.Println("skip to collect news end for", n.URL)
 	} else {
 		return fmt.Errorf("failed to collect new end for %s", n.URL)
 	}

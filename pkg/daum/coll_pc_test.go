@@ -1,7 +1,6 @@
 package daum
 
 import (
-	"github.com/darimuri/coll-news/pkg/types"
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/launcher"
 	. "github.com/onsi/ginkgo"
@@ -9,9 +8,10 @@ import (
 
 	"github.com/darimuri/coll-news/pkg/daum/pc"
 	"github.com/darimuri/coll-news/pkg/test"
+	"github.com/darimuri/coll-news/pkg/types"
 )
 
-var _ = Describe("collect news pc", func() {
+var _ = Describe("daum news pc", func() {
 	var browser *rod.Browser
 	var cut types.Collector
 
@@ -31,20 +31,17 @@ var _ = Describe("collect news pc", func() {
 			//Slowmotion(2 * time.Second).
 			Connect()
 		Expect(err).Should(BeNil())
+
+		cut, err = NewPortal(browser, types.PC(), pc.New(), "../../test/daum/pc", endCache)
+		Expect(err).Should(BeNil())
 	})
 
 	AfterEach(func() {
+		cut.Cleanup()
 		_ = browser.Close()
 	})
 
-	Context("portal", func() {
-
-		BeforeEach(func() {
-			var err error
-			cut, err = NewPortal(browser, types.PC(), pc.New(), "../../test/daum/pc")
-			Expect(err).Should(BeNil())
-		})
-
+	Context("collect", func() {
 		It("top news", func() {
 			cut.Top()
 

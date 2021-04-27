@@ -1,7 +1,6 @@
 package daum
 
 import (
-	"github.com/darimuri/coll-news/pkg/types"
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/devices"
 	"github.com/go-rod/rod/lib/launcher"
@@ -10,9 +9,10 @@ import (
 
 	"github.com/darimuri/coll-news/pkg/daum/mobile"
 	"github.com/darimuri/coll-news/pkg/test"
+	"github.com/darimuri/coll-news/pkg/types"
 )
 
-var _ = Describe("collect news mobile", func() {
+var _ = Describe("daum news mobile", func() {
 	var browser *rod.Browser
 	var cut types.Collector
 
@@ -32,20 +32,17 @@ var _ = Describe("collect news mobile", func() {
 			//Slowmotion(2 * time.Second).
 			Connect()
 		Expect(err).Should(BeNil())
+
+		cut, err = NewPortal(browser, types.Mobile(), mobile.New(), "../../test/daum/mobile", endCache)
+		Expect(err).Should(BeNil())
 	})
 
 	AfterEach(func() {
+		cut.Cleanup()
 		_ = browser.Close()
 	})
 
-	Context("portal", func() {
-
-		BeforeEach(func() {
-			var err error
-			cut, err = NewPortal(browser, types.Mobile(), mobile.New(), "../../test/daum/mobile")
-			Expect(err).Should(BeNil())
-		})
-
+	Context("collect", func() {
 		It("top news", func() {
 			cut.Top()
 
@@ -69,7 +66,7 @@ var _ = Describe("collect news mobile", func() {
 			}
 		})
 
-		FIt("news home news", func() {
+		It("news home news", func() {
 			cut.NewsHome()
 
 			newsList, err := cut.GetNewsHomeNewsList()

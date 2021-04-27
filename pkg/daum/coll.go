@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/url"
 	"time"
 
+	"github.com/darimuri/coll-news/pkg/cache"
 	rt "github.com/dormael/go-lib/rodtemplate"
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/cdp"
@@ -23,6 +25,7 @@ var _ types.Collector = (*Portal)(nil)
 type Portal struct {
 	*rt.BrowserTemplate
 	*rt.PageTemplate
+	cache cache.Cache
 
 	profile   types.Profile
 	collector types.TypedCollector
@@ -148,6 +151,20 @@ func (p *Portal) GetNewsHomeNewsList() (news []types.News, retErr error) {
 }
 
 func (p *Portal) GetNewsEnd(n *types.News) (retErr error) {
+	var end interface{}
+
+	cacheKey := asKey(n.URL)
+	end, retErr = p.cache.Get(cacheKey, &types.End{})
+	if retErr != nil {
+		return
+	}
+
+	if end != nil {
+		log.Printf("use cached end %s from key %s ", n.URL, cacheKey)
+		n.End = end.(*types.End)
+		return
+	}
+
 	p.openTab(n.URL)
 
 	defer func() {
@@ -165,11 +182,27 @@ func (p *Portal) GetNewsEnd(n *types.News) (retErr error) {
 
 	}()
 
-	return p.collector.GetNewsEnd(p.PageTemplate, n)
+	retErr = p.collector.GetNewsEnd(p.PageTemplate, n)
+	if retErr != nil {
+		return
+	}
+
+	retErr = p.cache.Set(cacheKey, n.End, time.Minute*10)
+
+	return
 }
 
-func NewPortal(browser *rod.Browser, profile types.Profile, collector types.TypedCollector, dumpRoot string) (types.Collector, error) {
-	s := &Portal{BrowserTemplate: rt.NewBrowserTemplate(browser), profile: profile, collector: collector, dumpRoot: dumpRoot}
+func asKey(k string) string {
+	u, err := url.Parse(k)
+	if err != nil {
+		panic(fmt.Errorf("failed to parse url %s for error: %v", k, err))
+	}
+
+	return fmt.Sprintf("%s://%s%s", u.Scheme, u.Host, u.Path)
+}
+
+func NewPortal(browser *rod.Browser, profile types.Profile, collector types.TypedCollector, dumpRoot string, endCache cache.Cache) (types.Collector, error) {
+	s := &Portal{BrowserTemplate: rt.NewBrowserTemplate(browser), profile: profile, collector: collector, dumpRoot: dumpRoot, cache: endCache}
 
 	return s, nil
 }

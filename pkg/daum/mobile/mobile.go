@@ -370,11 +370,11 @@ func (_ mobile) GetNewsEnd(p *rodtemplate.PageTemplate, n *types.News) error {
 	} else if true == mArticleBlock.Has("div[class=photo_view]") {
 		log.Println("skip collect end of photo view")
 	} else if true == contentBlock.Has("div[class=view_vod]") {
-		log.Println("skip to collect new end for view_vod", n.URL)
+		log.Println("skip to collect news end for view_vod", n.URL)
 	} else if true == contentBlock.Has("div[class=cont_vod]") {
-		log.Println("skip to collect new end for cont_vod", n.URL)
+		log.Println("skip to collect news end for cont_vod", n.URL)
 	} else if true == contentBlock.Has("div[data-tiara-layer=c_viewcontents]") {
-		log.Println("skip to collect new end for c_viewcontents", n.URL)
+		log.Println("skip to collect news end for c_viewcontents", n.URL)
 	} else {
 		return fmt.Errorf("failed to collect new end for %s", n.URL)
 	}
