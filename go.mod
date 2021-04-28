@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/PraserX/atomic-cache v1.2.1
-	github.com/dormael/go-lib v0.1.4
+	github.com/dormael/go-lib v0.1.6
 	github.com/emirpasic/gods v1.12.0 // indirect
 	github.com/go-rod/rod v0.97.3
 	github.com/onsi/ginkgo v1.14.2
@@ -13,4 +13,4 @@ require (
 	golang.org/x/text v0.3.3
 )
 
-//replace github.com/dormael/go-lib v0.1.4 => /home/dormael/my/clone/github.com/dormael/go-lib
+//replace github.com/dormael/go-lib v0.1.6 => /home/dormael/my/clone/github.com/dormael/go-lib

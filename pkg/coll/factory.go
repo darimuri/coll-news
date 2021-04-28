@@ -3,6 +3,7 @@ package coll
 import (
 	"fmt"
 
+	"github.com/darimuri/coll-news/pkg/cache"
 	"github.com/darimuri/coll-news/pkg/daum"
 	dmobile "github.com/darimuri/coll-news/pkg/daum/mobile"
 	dpc "github.com/darimuri/coll-news/pkg/daum/pc"
@@ -66,7 +67,7 @@ func NewCollector(collectSource, collectType string, option Option) (types.Colle
 		case PC:
 			t = dpc.New()
 		}
-		c, err = daum.NewPortal(browser, profile, t, option.SavePath)
+		c, err = daum.NewPortal(browser, profile, t, option.SavePath, cache.NewLargeCache())
 	case Naver:
 	}
 

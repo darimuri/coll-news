@@ -160,7 +160,6 @@ func (p *Portal) GetNewsEnd(n *types.News) (retErr error) {
 	}
 
 	if end != nil {
-		log.Printf("use cached end %s from key %s ", n.URL, cacheKey)
 		n.End = end.(*types.End)
 		return
 	}
@@ -187,7 +186,7 @@ func (p *Portal) GetNewsEnd(n *types.News) (retErr error) {
 		return
 	}
 
-	retErr = p.cache.Set(cacheKey, n.End, time.Minute*10)
+	retErr = p.cache.Set(cacheKey, n.End, time.Minute*3)
 
 	return
 }

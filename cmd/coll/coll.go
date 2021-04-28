@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -14,7 +15,7 @@ import (
 )
 
 var (
-	collectDuration time.Duration
+	collectPeriod   time.Duration
 	collectType     string
 	collectSource   string
 	collectSavePath string
@@ -23,7 +24,7 @@ var (
 
 var Command = &cobra.Command{
 	Use:   "coll",
-	Short: "Collect portal news in a given duration",
+	Short: "Collect portal news in a given period",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return collect()
 	},
@@ -34,7 +35,7 @@ var Command = &cobra.Command{
 }
 
 func init() {
-	Command.Flags().DurationVarP(&collectDuration, "period", "p", time.Minute, "period between every news collection")
+	Command.Flags().DurationVarP(&collectPeriod, "period", "p", time.Minute*10, "period between every news collection")
 	Command.Flags().StringVarP(&collectType, "type", "t", "", fmt.Sprintf("collect news type(%s)", coll.Types))
 	Command.Flags().StringVarP(&collectSource, "news-source", "n", "", fmt.Sprintf("news source(%s)", coll.Sources))
 	Command.Flags().StringVarP(&collectSavePath, "save-path", "s", "", "save path for collected data")
@@ -58,62 +59,102 @@ func collect() error {
 	}
 
 	sigs := make(chan os.Signal, 1)
-	collError := make(chan error, 1)
+	res := make(chan error, 1)
 
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
+	var finished time.Time
+
+	log.Println("start collect news for period", collectPeriod)
+	nextTrigger := time.Now().Add(collectPeriod)
+	go collectAndSave(c, res)
 	for {
 		select {
 		case sig := <-sigs:
 			log.Println("stop collection with signal", sig)
 			os.Exit(0)
-		case <-time.After(collectDuration):
-			collectAndSave(c, collError)
-		case ce := <-collError:
-			if ce != nil {
-				fmt.Println("failed to collect for error", ce.Error())
+		case <-time.After(time.Second):
+			if false == finished.IsZero() && nextTrigger.Before(time.Now()) {
+				finished = time.Time{}
+				nextTrigger = time.Now().Add(collectPeriod)
+				go collectAndSave(c, res)
+			}
+		case collErr := <-res:
+			if collErr != nil {
+				log.Println("failed to collect for error", collErr.Error())
 				os.Exit(1)
 			}
+			log.Println("next collection will start at", nextTrigger)
+			finished = time.Now()
+
 		}
 	}
 
 	return nil
 }
 
-func collectAndSave(c types.Collector, collError chan error) {
-	log.Println("collect")
+func collectAndSave(c types.Collector, res chan error) {
+	log.Println("collect news", collectSource, collectType, "to", collectSavePath)
+
+	news := make([]types.News, 0)
+
+	log.Println("get top news list")
 
 	c.Top()
-	news, err := c.GetTopNewsList()
-	if err != nil {
-		collError <- err
+	topNews, errTop := c.GetTopNewsList()
+	if errTop != nil {
+		res <- errTop
 		return
 	}
 
-	for _, n := range news {
-		if e := c.GetNewsEnd(&n); e != nil {
-			collError <- e
-			return
-		}
-	}
+	news = append(news, topNews...)
+
+	log.Println("get news home news list")
 
 	c.NewsHome()
-	news, err = c.GetNewsHomeNewsList()
-	if err != nil {
-		collError <- err
+	homeNews, errHome := c.GetNewsHomeNewsList()
+	if errHome != nil {
+		res <- errHome
 		return
 	}
 
-	for _, n := range news {
-		if e := c.GetNewsEnd(&n); e != nil {
-			collError <- e
+	news = append(news, homeNews...)
+
+	log.Println("get news ends", len(news))
+
+	for idx := range news {
+		if e := c.GetNewsEnd(&news[idx]); e != nil {
+			res <- e
 			return
 		}
 	}
 
-	log.Println("collected")
+	for idx, n := range news {
+		emotions := make([]string, 0)
+		author := ""
+		publisher := n.Publisher
+		numComment := uint64(0)
+		if n.End != nil {
+			author = n.End.Author
+			publisher = n.End.Provider
+			numComment = n.End.NumComment
+
+			for _, e := range n.End.Emotions {
+				emotions = append(emotions, fmt.Sprintf("%s(%d)", e.Name, e.Count))
+			}
+		}
+
+		author = fmt.Sprintf("%-20v", strings.TrimSpace(author))
+		publisher = fmt.Sprintf("%-10v", strings.TrimSpace(publisher))
+
+		fmt.Printf("%d\t%d\t%s\t\t%s\t%v\t%s\n", idx, numComment, author, publisher, emotions, strings.TrimSpace(n.Title))
+	}
+
+	log.Println("collected news", collectSource, collectType, "to", collectSavePath)
 
 	c.Cleanup()
+
+	res <- nil
 }
 
 func validateFlags() error {
