@@ -129,21 +129,28 @@ func collectAndSave(c types.Collector, res chan error) {
 			res <- e
 			return
 		}
+		if idx > 10 && idx%10 == 1 {
+			log.Println((idx*100)/len(news), "%...")
+		}
 	}
 
+	fmt.Printf("%v|%v|%v|%v|%v|%v|%v|%v|%v|%v\n", "No.", "NumComment", "Author", "Publisher", "Category", "Title", "PostedAt", "ModifiedAt", "Emotions", "URL")
+	fmt.Printf("%v|%v|%v|%v|%v|%v|%v|%v|%v|%v\n", "---", "---", "---", "---", "---", "---", "---", "---", "---", "---")
 	for idx, n := range news {
 		emotions := make([]string, 0)
 		author := ""
 		publisher := n.Publisher
 		numComment := uint64(0)
-		title := strings.TrimSpace(n.Title)
+		title := strings.TrimSpace(strings.ReplaceAll(n.Title, `|`, `\|`))
 		postedAt := ""
 		modifiedAt := ""
+		category := ""
 
 		if n.End != nil {
 			author = n.End.Author
 			publisher = n.End.Provider
 			numComment = n.End.NumComment
+			category = n.End.Category
 			postedAt = n.End.PostedAt
 			modifiedAt = n.End.ModifiedAt
 
@@ -155,7 +162,7 @@ func collectAndSave(c types.Collector, res chan error) {
 		author = strings.TrimSpace(author)
 		publisher = strings.TrimSpace(publisher)
 
-		fmt.Printf("%3d|%d|%v|%v|%v|%v|%v|%v\n", idx, numComment, author, publisher, emotions, title, postedAt, modifiedAt)
+		fmt.Printf("%d|%d|%v|%v|%v|%v|%v|%v|%v|%v\n", idx, numComment, author, publisher, category, title, postedAt, modifiedAt, emotions, n.URL)
 	}
 
 	log.Println("collected news", collectSource, collectType, "to", collectSavePath)
