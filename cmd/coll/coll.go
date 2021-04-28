@@ -84,7 +84,9 @@ func collect() error {
 				log.Println("failed to collect for error", collErr.Error())
 				os.Exit(1)
 			}
-			log.Println("next collection will start at", nextTrigger)
+			if nextTrigger.After(time.Now()) {
+				log.Println("next collection will start at", nextTrigger.Format("2006/01/02 15:04:05"))
+			}
 			finished = time.Now()
 
 		}
@@ -134,20 +136,26 @@ func collectAndSave(c types.Collector, res chan error) {
 		author := ""
 		publisher := n.Publisher
 		numComment := uint64(0)
+		title := strings.TrimSpace(n.Title)
+		postedAt := ""
+		modifiedAt := ""
+
 		if n.End != nil {
 			author = n.End.Author
 			publisher = n.End.Provider
 			numComment = n.End.NumComment
+			postedAt = n.End.PostedAt
+			modifiedAt = n.End.ModifiedAt
 
 			for _, e := range n.End.Emotions {
 				emotions = append(emotions, fmt.Sprintf("%s(%d)", e.Name, e.Count))
 			}
 		}
 
-		author = fmt.Sprintf("%-20v", strings.TrimSpace(author))
-		publisher = fmt.Sprintf("%-10v", strings.TrimSpace(publisher))
+		author = strings.TrimSpace(author)
+		publisher = strings.TrimSpace(publisher)
 
-		fmt.Printf("%d\t%d\t%s\t\t%s\t%v\t%s\n", idx, numComment, author, publisher, emotions, strings.TrimSpace(n.Title))
+		fmt.Printf("%3d|%d|%v|%v|%v|%v|%v|%v\n", idx, numComment, author, publisher, emotions, title, postedAt, modifiedAt)
 	}
 
 	log.Println("collected news", collectSource, collectType, "to", collectSavePath)
