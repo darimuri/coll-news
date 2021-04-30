@@ -8,6 +8,22 @@ import (
 	"time"
 )
 
+const (
+	DataDateTimeFormat = time.RFC3339
+	LogDateTimeFormat  = "2006/01/02 15:04:05"
+	FileYearFormat     = "2006"
+	FileDateFormat     = "20060102"
+	FileTimeFormat     = "150405"
+	FileTimeNanoFormat = "150405.000000000"
+)
+
+type Loc string
+
+const (
+	Top  = "Top"
+	Home = "Home"
+)
+
 type News struct {
 	URL            string `json:"url"`
 	Image          string `json:"image,omitempty"`
@@ -20,23 +36,26 @@ type News struct {
 	FullScreenShot string `json:"full_screen_shot"`
 	TabScreenShot  string `json:"tab_screen_shot"`
 	Publisher      string `json:"publisher"`
+	Location       Loc    `json:"loc"`
+	CollectedAt    string `json:"collected_at"`
 	End            *End   `json:"end"`
 }
 
 type End struct {
-	Category   string    `json:"category,omitempty"`
-	Provider   string    `json:"provider,omitempty"`
-	Title      string    `json:"title"`
-	Author     string    `json:"author"`
-	PostedAt   string    `json:"posted_at"`
-	ModifiedAt string    `json:"modified_at,omitempty"`
-	NumComment uint64    `json:"num_comment,omitempty"`
-	Emotions   []Emotion `json:"emotions,omitempty"`
-	Text       string    `json:"text"`
-	HTML       string    `json:"html"`
-	Images     []string  `json:"images,omitempty"`
-	Program    string    `json:"program,omitempty"`
-	NumPlayed  uint64    `json:"num_played"`
+	Category    string    `json:"category,omitempty"`
+	Provider    string    `json:"provider,omitempty"`
+	Title       string    `json:"title"`
+	Author      string    `json:"author"`
+	CollectedAt string    `json:"collected_at"`
+	PostedAt    string    `json:"posted_at"`
+	ModifiedAt  string    `json:"modified_at,omitempty"`
+	NumComment  uint64    `json:"num_comment,omitempty"`
+	Emotions    []Emotion `json:"emotions,omitempty"`
+	Text        string    `json:"text"`
+	HTML        string    `json:"html"`
+	Images      []string  `json:"images,omitempty"`
+	Program     string    `json:"program,omitempty"`
+	NumPlayed   uint64    `json:"num_played"`
 }
 
 type Emotion struct {
@@ -65,8 +84,8 @@ type DumpDirectory struct {
 }
 
 func (d *DumpDirectory) Init() error {
-	d.dumpPath = path.Join(d.RootPath, d.DumpTime.Format("20060102"), d.Source)
-	d.dumpPrefix = d.DumpTime.Format("150405.000000000")
+	d.dumpPath = path.Join(d.RootPath, d.DumpTime.Format(FileDateFormat), d.Source)
+	d.dumpPrefix = d.DumpTime.Format(FileTimeNanoFormat)
 	d.fullScreenShot = path.Join(d.dumpPath, fmt.Sprintf("%s.00.jpg", d.dumpPrefix))
 	d.fullHTML = path.Join(d.dumpPath, fmt.Sprintf("%s.00.html", d.dumpPrefix))
 

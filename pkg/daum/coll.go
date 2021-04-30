@@ -166,6 +166,8 @@ func (p *Portal) GetNewsEnd(n *types.News) (retErr error) {
 
 	p.openTab(n.URL)
 
+	collectedAt := time.Now()
+
 	defer func() {
 		v := recover()
 		if v == nil {
@@ -186,9 +188,35 @@ func (p *Portal) GetNewsEnd(n *types.News) (retErr error) {
 		return
 	}
 
+	if n.End != nil {
+		n.End.CollectedAt = collectedAt.Format(types.DataDateTimeFormat)
+		n.End.PostedAt = convertToDataFormat(n.End.PostedAt)
+		n.End.ModifiedAt = convertToDataFormat(n.End.ModifiedAt)
+	}
+
 	retErr = p.cache.Set(cacheKey, n.End, time.Minute*3)
 
 	return
+}
+
+func convertToDataFormat(at string) string {
+	if at == "" {
+		return ""
+	}
+
+	layout := "2006. 01. 02. 15:04"
+	layoutFallback := "2006.01.02 15:04"
+	dt, err := time.ParseInLocation(layout, at, time.Local)
+	if err != nil {
+		log.Println("failed to parse", at, "with", layout, "for", err.Error())
+		dt, err = time.Parse(layoutFallback, at)
+		if err != nil {
+			log.Println("failed to parse", at, "with", layoutFallback, "for", err.Error())
+			return at
+		}
+	}
+
+	return dt.Format(types.DataDateTimeFormat)
 }
 
 func asKey(k string) string {

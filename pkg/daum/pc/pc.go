@@ -291,13 +291,12 @@ func (_ *pc) GetNewsEnd(p *rt.PageTemplate, n *types.News) error {
 		spanS := infoBlock.Els("span[class=txt_info]")
 		for idx := range spanS {
 			spText := spanS[idx].MustText()
-			switch idx {
-			case 0:
-				n.End.Author = strings.TrimSpace(spText)
-			case 1:
+			if strings.Contains(spText, "입력") {
 				n.End.PostedAt = strings.TrimSpace(strings.ReplaceAll(spText, "입력", ""))
-			case 2:
+			} else if strings.Contains(spText, "수정") {
 				n.End.ModifiedAt = strings.TrimSpace(strings.ReplaceAll(spText, "수정", ""))
+			} else {
+				n.End.Author = strings.TrimSpace(spText)
 			}
 		}
 

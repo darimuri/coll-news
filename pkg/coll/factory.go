@@ -24,8 +24,9 @@ const (
 )
 
 type Option struct {
-	SavePath string
-	Headless bool
+	ChromeBin string
+	SavePath  string
+	Headless  bool
 }
 
 func NewCollector(collectSource, collectType string, option Option) (types.Collector, error) {
@@ -34,7 +35,12 @@ func NewCollector(collectSource, collectType string, option Option) (types.Colle
 	var profile types.Profile
 	var browser *rod.Browser
 
-	url, err := launcher.New().
+	l := launcher.New()
+	if option.ChromeBin != "" {
+		l.Bin(option.ChromeBin)
+	}
+
+	url, err := l.
 		Headless(option.Headless).
 		Devtools(false).
 		Set("start-maximized").
