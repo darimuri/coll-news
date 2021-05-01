@@ -66,13 +66,14 @@ var (
 )
 
 var (
-	collectPeriod   time.Duration
-	collectType     string
-	collectSource   string
-	collectSavePath string
-	listOutputType  string
-	chromeBin       string
-	disableHeadless bool
+	collectPeriod      time.Duration
+	collectType        string
+	collectSource      string
+	collectSavePath    string
+	listOutputType     string
+	chromeBin          string
+	disableHeadless    bool
+	continueOnEndError bool
 )
 
 var Command = &cobra.Command{
@@ -95,6 +96,7 @@ func init() {
 	Command.Flags().StringVarP(&collectSavePath, "save-path", "s", "", "save path for collected data")
 	Command.Flags().StringVarP(&listOutputType, "list-output", "o", "b", fmt.Sprintf("list output of collected news(%s)", listTypesDesc))
 	Command.Flags().BoolVarP(&disableHeadless, "no-headless", "", false, "collect news in non-headless mode")
+	Command.Flags().BoolVarP(&continueOnEndError, "continue-end-error", "c", false, "continue collect end when error occurs")
 
 	//goland:noinspection GoUnhandledErrorResult
 	Command.MarkFlagRequired("type")
@@ -102,6 +104,8 @@ func init() {
 	Command.MarkFlagRequired("news-source")
 	//goland:noinspection GoUnhandledErrorResult
 	Command.MarkFlagRequired("save-path")
+
+	log.SetFlags(log.LstdFlags | log.Lmicroseconds | log.Lshortfile)
 }
 
 func collect() error {
@@ -115,7 +119,7 @@ func collect() error {
 	var finished time.Time
 
 	log.Println("start collect news for period", collectPeriod)
-	nextTrigger := time.Now().Add(collectPeriod)
+	nextTrigger := nowInLocalZone().Add(collectPeriod)
 	go collectAndSave(e, savePath)
 	for {
 		select {
@@ -145,7 +149,7 @@ func collect() error {
 }
 
 func collectAndSave(res chan error, savePath string) {
-	now := time.Now()
+	now := nowInLocalZone()
 
 	log.Println("collect news", collectSource, collectType, "to", savePath)
 
@@ -178,7 +182,7 @@ func collectAndSave(res chan error, savePath string) {
 	log.Println("get top news list")
 
 	c.Top()
-	collectedAt := time.Now().Format(types.DataDateTimeFormat)
+	collectedAt := nowInLocalZone().Format(types.DataDateTimeFormat)
 
 	topNews, errTop := c.GetTopNewsList()
 	if errTop != nil {
@@ -215,8 +219,12 @@ func collectAndSave(res chan error, savePath string) {
 
 	for idx := range news {
 		if e := c.GetNewsEnd(&news[idx]); e != nil {
-			res <- e
-			return
+			if false == continueOnEndError {
+				res <- e
+				return
+
+			}
+			log.Printf("failed to get new end %s, but will contine with error %v\n", news[idx].Title, e)
 		}
 		if idx > 10 && idx%10 == 1 {
 			log.Printf("processed %d percent of news end\n", (idx*100)/len(news))
@@ -308,6 +316,10 @@ func collectAndSave(res chan error, savePath string) {
 	res <- nil
 }
 
+func nowInLocalZone() time.Time {
+	return time.Now().In(time.Local)
+}
+
 func emotionsToString(emotions []string) string {
 	if len(emotions) == 0 {
 		return "-"
@@ -341,6 +353,15 @@ func dumpToFile(rows [][]string, listPath, filePrefix, ext string, sep rune, hea
 	buffer := &bytes.Buffer{}
 	table := csv.NewWriter(buffer)
 	table.Comma = sep
+
+	if sep == '|' {
+		for i := range rows {
+			for j := range rows[i] {
+				rows[i][j] = strings.ReplaceAll(rows[i][j], "|", "&vert;")
+			}
+		}
+	}
+
 	_ = table.Write(listHeader)
 	if headerLine {
 		_ = table.Write(listHeaderLine)
@@ -349,6 +370,11 @@ func dumpToFile(rows [][]string, listPath, filePrefix, ext string, sep rune, hea
 	table.Flush()
 
 	outputFile := filepath.Join(listPath, fmt.Sprintf("%s.%s", filePrefix, ext))
+
+	if err := table.Error(); err != nil {
+		log.Printf("error occured when writing list of type %s %v", ext, err)
+	}
+
 	if err := ioutil.WriteFile(outputFile, buffer.Bytes(), os.FileMode(0600)); err != nil {
 		log.Println("failed to write to", outputFile, "for", err.Error())
 	}
