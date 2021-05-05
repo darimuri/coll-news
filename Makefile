@@ -10,6 +10,20 @@ image-build: build-cmd
 	cp -a news docker/
 	docker build -t coll-news:latest docker
 
+image-tag:
+ifdef TAG
+	docker tag coll-news:latest dormael/coll-news:${TAG}
+else
+	@echo "TAG is required"
+endif
+
+image-push:
+ifdef TAG
+	docker push dormael/coll-news:${TAG}
+else
+	@echo "TAG is required"
+endif
+
 image-rm:
 	docker rm coll-news
 	docker rmi coll-news:latest
@@ -18,6 +32,6 @@ image-test:
 	mkdir -p /home/dormael/coll-news
 	docker run -it --name coll-news -v /home/dormael/coll-news:/home/coll coll-news:latest bash
 
-image-run:
+image-run: image-build
 	mkdir -p /home/dormael/coll-news
-	docker run -it --name coll-news -v /home/dormael/coll-news:/home/coll coll-news:latest news coll -t mobile -n daum -s ./coll_dir
+	docker run -it --name coll-news -v /home/dormael/coll-news:/home/coll coll-news:latest news coll -t mobile -s daum -d ./coll_dir -e -l 3

@@ -52,7 +52,8 @@ COPY fonts-local.conf /etc/fonts/local.conf
 COPY news /usr/bin/news
 
 # timezone support
-RUN apk add tzdata
+RUN cp /usr/share/zoneinfo/Asia/Seoul /etc/localtime \
+  && echo "Asia/Seoul" > /etc/timezone
 
 RUN mkdir -p $USER_HOME \
   && chown ${uid}:${gid} $USER_HOME \

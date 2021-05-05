@@ -2,7 +2,9 @@ package coll
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -66,14 +68,15 @@ var (
 )
 
 var (
-	collectPeriod      time.Duration
-	collectType        string
-	collectSource      string
-	collectSavePath    string
-	listOutputType     string
-	chromeBin          string
-	disableHeadless    bool
-	continueOnEndError bool
+	collectPeriod        time.Duration
+	collectType          string
+	collectSource        string
+	collectDirectoryPath string
+	listOutputFormat     string
+	chromeBin            string
+	disableHeadless      bool
+	endGetIgnoreError    bool
+	listGetRetryCount    int
 )
 
 var Command = &cobra.Command{
@@ -89,27 +92,28 @@ var Command = &cobra.Command{
 }
 
 func init() {
-	Command.Flags().DurationVarP(&collectPeriod, "period", "p", time.Minute*10, "period between every news collection")
-	Command.Flags().StringVarP(&collectType, "type", "t", "", fmt.Sprintf("collect news type(%s)", coll.Types))
-	Command.Flags().StringVarP(&collectSource, "news-source", "n", "", fmt.Sprintf("news source(%s)", coll.Sources))
 	Command.Flags().StringVarP(&chromeBin, "chrome-bin", "b", "/usr/bin/chromium-browser", "chrome browser binary path")
-	Command.Flags().StringVarP(&collectSavePath, "save-path", "s", "", "save path for collected data")
-	Command.Flags().StringVarP(&listOutputType, "list-output", "o", "b", fmt.Sprintf("list output of collected news(%s)", listTypesDesc))
-	Command.Flags().BoolVarP(&disableHeadless, "no-headless", "", false, "collect news in non-headless mode")
-	Command.Flags().BoolVarP(&continueOnEndError, "continue-end-error", "c", false, "continue collect end when error occurs")
+	Command.Flags().DurationVarP(&collectPeriod, "collect-period", "p", time.Minute*10, "period between every news collection")
+	Command.Flags().StringVarP(&collectType, "collect-type", "t", "", fmt.Sprintf("collect news type(%s)", coll.Types))
+	Command.Flags().StringVarP(&collectSource, "collect-news-source", "s", "", fmt.Sprintf("news source(%s)", coll.Sources))
+	Command.Flags().StringVarP(&collectDirectoryPath, "save-directory-path", "d", "", "save path for collected data")
+	Command.Flags().StringVarP(&listOutputFormat, "list-output-format", "f", "b", fmt.Sprintf("list output format of collected news(%s)", listTypesDesc))
+	Command.Flags().BoolVarP(&disableHeadless, "no-headless", "n", false, "collect news in non-headless mode")
+	Command.Flags().BoolVarP(&endGetIgnoreError, "end-get-ignore-error", "e", false, "continue collect end when error occurs")
+	Command.Flags().IntVarP(&listGetRetryCount, "list-get-retry-count", "l", 0, "retry count while getting list")
 
 	//goland:noinspection GoUnhandledErrorResult
-	Command.MarkFlagRequired("type")
+	Command.MarkFlagRequired("collect-type")
 	//goland:noinspection GoUnhandledErrorResult
-	Command.MarkFlagRequired("news-source")
+	Command.MarkFlagRequired("collect-news-source")
 	//goland:noinspection GoUnhandledErrorResult
-	Command.MarkFlagRequired("save-path")
+	Command.MarkFlagRequired("save-directory-path")
 
 	log.SetFlags(log.LstdFlags | log.Lmicroseconds | log.Lshortfile)
 }
 
 func collect() error {
-	savePath := filepath.Join(collectSavePath, collectSource, collectType)
+	savePath := filepath.Join(collectDirectoryPath, collectSource, collectType)
 
 	s := make(chan os.Signal, 1)
 	e := make(chan error, 1)
@@ -120,7 +124,9 @@ func collect() error {
 
 	log.Println("start collect news for period", collectPeriod)
 	nextTrigger := nowInLocalZone().Add(collectPeriod)
-	go collectAndSave(e, savePath)
+	go func() {
+		e <- collectAndSave(savePath)
+	}()
 	for {
 		select {
 		case sig := <-s:
@@ -130,7 +136,9 @@ func collect() error {
 			if false == finished.IsZero() && nextTrigger.Before(time.Now()) {
 				finished = time.Time{}
 				nextTrigger = time.Now().Add(collectPeriod)
-				go collectAndSave(e, savePath)
+				go func() {
+					e <- collectAndSave(savePath)
+				}()
 			}
 		case collErr := <-e:
 			if collErr != nil {
@@ -148,27 +156,30 @@ func collect() error {
 	return nil
 }
 
-func collectAndSave(res chan error, savePath string) {
-	now := nowInLocalZone()
+func collectAndSave(rootPath string) error {
+	started := nowInLocalZone()
 
-	log.Println("collect news", collectSource, collectType, "to", savePath)
+	log.Println("collect news", collectSource, collectType, "to", rootPath)
 
-	dumpPath := filepath.Join(savePath, "dump", now.Format(types.FileYearFormat))
-	listPath := filepath.Join(savePath, "list", now.Format(types.FileYearFormat), now.Format(types.FileDateFormat))
+	dumpPath := filepath.Join(rootPath, "dump", started.Format(types.FileYearFormat))
+	fullDumpPath := filepath.Join(dumpPath, started.Format(types.FileDateFormat))
+	listPath := filepath.Join(rootPath, "list", started.Format(types.FileYearFormat), started.Format(types.FileDateFormat))
+
+	gzipDumpFile := filepath.Join(fullDumpPath, fmt.Sprintf("%s.%s", toFilePrefix(started), "json.gz"))
 
 	if errMkdir := checkDirWritable(listPath); errMkdir != nil {
-		res <- errMkdir
-		return
+		return errMkdir
 	}
 
-	c, errColl := coll.NewCollector(collectSource, collectType, coll.Option{
+	option := coll.Option{
 		ChromeBin: chromeBin,
 		SavePath:  dumpPath,
 		Headless:  !disableHeadless,
-	})
+	}
+
+	c, errColl := coll.NewCollector(collectSource, collectType, option)
 	if errColl != nil {
-		res <- errColl
-		return
+		return errColl
 	}
 
 	defer func() {
@@ -179,58 +190,142 @@ func collectAndSave(res chan error, savePath string) {
 
 	news := make([]types.News, 0)
 
-	log.Println("get top news list")
+	var listGetErrorCount int
+	var collectedAt string
+	var topNews, homeNews []types.News
+	var err error
 
-	c.Top()
-	collectedAt := nowInLocalZone().Format(types.DataDateTimeFormat)
+	for {
+		log.Println("get top news list", listGetErrorCount, "<", listGetRetryCount)
 
-	topNews, errTop := c.GetTopNewsList()
-	if errTop != nil {
-		res <- errTop
-		return
+		c.Top()
+		collectedAt = nowInLocalZone().Format(types.DataDateTimeFormat)
+		topNews, err = c.GetTopNewsList()
+
+		if err == nil {
+			break
+		}
+
+		log.Println("failed to get top news list for", err)
+
+		if listGetErrorCount < listGetRetryCount {
+			listGetErrorCount++
+			continue
+		}
+
+		return err
+	}
+
+	listGetErrorCount = 0
+	for {
+		log.Println("get news home news list", listGetErrorCount, "<", listGetRetryCount)
+
+		c.NewsHome()
+		collectedAt = time.Now().Format(types.DataDateTimeFormat)
+		homeNews, err = c.GetNewsHomeNewsList()
+
+		if err == nil {
+			break
+		}
+
+		log.Println("failed to get news home news list for", err)
+
+		if listGetErrorCount < listGetRetryCount {
+			listGetErrorCount++
+			continue
+		}
+
+		return err
 	}
 
 	for i := range topNews {
-		topNews[i].CollectedAt = collectedAt
 		topNews[i].Location = types.Top
-	}
-
-	news = append(news, topNews...)
-
-	log.Println("get news home news list")
-
-	c.NewsHome()
-	collectedAt = time.Now().Format(types.DataDateTimeFormat)
-
-	homeNews, errHome := c.GetNewsHomeNewsList()
-	if errHome != nil {
-		res <- errHome
-		return
+		topNews[i].CollectedAt = collectedAt
 	}
 
 	for i := range homeNews {
-		homeNews[i].CollectedAt = collectedAt
 		homeNews[i].Location = types.Home
+		homeNews[i].CollectedAt = collectedAt
 	}
 
+	news = append(news, topNews...)
 	news = append(news, homeNews...)
 
 	log.Printf("get %d numbers of news ends\n", len(news))
 
 	for idx := range news {
-		if e := c.GetNewsEnd(&news[idx]); e != nil {
-			if false == continueOnEndError {
-				res <- e
-				return
+		if err = c.GetNewsEnd(&news[idx]); err != nil {
+			if false == endGetIgnoreError {
+				return err
 
 			}
-			log.Printf("failed to get new end %s, but will contine with error %v\n", news[idx].Title, e)
+			log.Printf("failed to get new end %s, but will contine with error %v\n", news[idx].Title, err)
 		}
+
+		if news[idx].End != nil {
+			news[idx].End.HTML = ""
+		}
+
 		if idx > 10 && idx%10 == 1 {
 			log.Printf("processed %d percent of news end\n", (idx*100)/len(news))
 		}
 	}
 
+	tableRows := toTable(news)
+
+	switch listOutputFormat {
+	case listTypeTsv:
+		dumpToFile(tableRows, listPath, toFilePrefix(started), "tsv", '\t', false)
+	case listTypeMD:
+		dumpToFile(tableRows, listPath, toFilePrefix(started), "md", '|', true)
+	case listTypeBoth:
+		dumpToFile(tableRows, listPath, toFilePrefix(started), "tsv", '\t', false)
+		dumpToFile(tableRows, listPath, toFilePrefix(started), "md", '|', true)
+	}
+
+	byteArr, errGzip := toJsonGzipBytes(news)
+	if errGzip != nil {
+		return errGzip
+	}
+
+	if err = ioutil.WriteFile(gzipDumpFile, byteArr, os.FileMode(0644)); err != nil {
+		return err
+	}
+
+	log.Println("collected news", collectSource, collectType, "to", collectDirectoryPath)
+
+	return nil
+}
+
+func toJsonGzipBytes(news []types.News) ([]byte, error) {
+	jsonBytes, errJson := json.Marshal(news)
+	if errJson != nil {
+		return nil, errJson
+	}
+
+	buffer := &bytes.Buffer{}
+	gz, errGzip := gzip.NewWriterLevel(buffer, gzip.BestCompression)
+	if errGzip != nil {
+		return nil, errGzip
+	}
+
+	_, errGzip = gz.Write(jsonBytes)
+	if errGzip != nil {
+		return nil, errGzip
+	}
+
+	if errGzip = gz.Close(); errGzip != nil {
+		return nil, errGzip
+	}
+
+	return buffer.Bytes(), nil
+}
+
+func toFilePrefix(t time.Time) string {
+	return fmt.Sprintf("%s-%s", t.Format(types.FileDateFormat), t.Format(types.FileTimeFormat))
+}
+
+func toTable(news []types.News) [][]string {
 	tableRows := make([][]string, 0)
 	for idx, n := range news {
 		emotions := make([]string, 0)
@@ -239,7 +334,7 @@ func collectAndSave(res chan error, savePath string) {
 		numComment := uint64(0)
 		title := strings.TrimSpace(n.Title)
 		location := n.Location
-		collectedAt = ""
+		collectedAt := ""
 		postedAt := ""
 		modifiedAt := ""
 		category := ""
@@ -298,22 +393,7 @@ func collectAndSave(res chan error, savePath string) {
 
 		tableRows = append(tableRows, row)
 	}
-
-	filePrefix := fmt.Sprintf("%s-%s", now.Format(types.FileDateFormat), now.Format(types.FileTimeFormat))
-
-	switch listOutputType {
-	case listTypeTsv:
-		dumpToFile(tableRows, listPath, filePrefix, "tsv", '\t', false)
-	case listTypeMD:
-		dumpToFile(tableRows, listPath, filePrefix, "md", '|', true)
-	case listTypeBoth:
-		dumpToFile(tableRows, listPath, filePrefix, "tsv", '\t', false)
-		dumpToFile(tableRows, listPath, filePrefix, "md", '|', true)
-	}
-
-	log.Println("collected news", collectSource, collectType, "to", collectSavePath)
-
-	res <- nil
+	return tableRows
 }
 
 func nowInLocalZone() time.Time {
@@ -397,34 +477,34 @@ func validateFlags() error {
 		return err
 	}
 
-	if _, ok := availableListTypes[listOutputType]; false == ok {
-		return fmt.Errorf("list output type %s is not supported", listOutputType)
+	if _, ok := availableListTypes[listOutputFormat]; false == ok {
+		return fmt.Errorf("list output type %s is not supported", listOutputFormat)
 	}
 
 	return nil
 }
 
 func validateSavePathWritable() error {
-	info, errStat := os.Stat(collectSavePath)
+	info, errStat := os.Stat(collectDirectoryPath)
 	if errStat != nil {
 		if false == os.IsNotExist(errStat) {
 			return errStat
 		}
 
 		if info == nil {
-			if err := os.MkdirAll(collectSavePath, 0755); err != nil {
+			if err := os.MkdirAll(collectDirectoryPath, 0755); err != nil {
 				return err
 			}
 
-			info, _ = os.Stat(collectSavePath)
+			info, _ = os.Stat(collectDirectoryPath)
 		}
 
 		if false == info.IsDir() {
-			return fmt.Errorf("save-path %s is not a directory", collectSavePath)
+			return fmt.Errorf("save-path %s is not a directory", collectDirectoryPath)
 		}
 
 		if info.Mode().Perm()&(1<<(uint(7))) == 0 {
-			return fmt.Errorf("write permission is not set to save-path %s", collectSavePath)
+			return fmt.Errorf("write permission is not set to save-path %s", collectDirectoryPath)
 		}
 	}
 

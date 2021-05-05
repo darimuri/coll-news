@@ -52,7 +52,7 @@ type End struct {
 	NumComment  uint64    `json:"num_comment,omitempty"`
 	Emotions    []Emotion `json:"emotions,omitempty"`
 	Text        string    `json:"text"`
-	HTML        string    `json:"html"`
+	HTML        string    `json:"html,omitempty"`
 	Images      []string  `json:"images,omitempty"`
 	Program     string    `json:"program,omitempty"`
 	NumPlayed   uint64    `json:"num_played"`

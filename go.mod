@@ -6,7 +6,7 @@ require (
 	github.com/PraserX/atomic-cache v1.2.1
 	github.com/allegro/bigcache v1.2.1 // indirect
 	github.com/coocood/freecache v1.1.1 // indirect
-	github.com/dormael/go-lib v0.1.6
+	github.com/dormael/go-lib v0.1.7
 	github.com/emirpasic/gods v1.12.0 // indirect
 	github.com/go-rod/rod v0.97.3
 	github.com/olekukonko/tablewriter v0.0.5
@@ -16,4 +16,4 @@ require (
 	golang.org/x/sys v0.0.0-20200930185726-fdedc70b468f
 )
 
-//replace github.com/dormael/go-lib v0.1.6 => /home/dormael/my/clone/github.com/dormael/go-lib
+//replace github.com/dormael/go-lib v0.1.7 => /home/dormael/my/clone/github.com/dormael/go-lib
