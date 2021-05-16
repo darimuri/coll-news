@@ -207,6 +207,7 @@ func collectAndSave(rootPath string) error {
 		}
 
 		log.Println("failed to get top news list for", err)
+		time.Sleep(time.Second)
 
 		if listGetErrorCount < listGetRetryCount {
 			listGetErrorCount++
@@ -229,6 +230,7 @@ func collectAndSave(rootPath string) error {
 		}
 
 		log.Println("failed to get news home news list for", err)
+		time.Sleep(time.Second)
 
 		if listGetErrorCount < listGetRetryCount {
 			listGetErrorCount++

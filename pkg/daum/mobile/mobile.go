@@ -81,19 +81,22 @@ func (_ mobile) GetNewsHomeNewsList(p *rodtemplate.PageTemplate, dd types.DumpDi
 			}
 			newsList = append(newsList, n1)
 
-			subBlock := b.El("div.cont_sub")
-			contSub := subBlock.El("span.inner_link")
-			n2 := types.News{
-				NewsPage:       pageNum,
-				Order:          idx,
-				SubOrder:       1,
-				Publisher:      contSub.El("span.txt_cp").MustText(),
-				Title:          contSub.El("span.tit_sub").MustText(),
-				URL:            util.AnchorHREF(subBlock),
-				FullHTML:       dd.FullHTML(),
-				FullScreenShot: dd.FullScreenShot(),
+			contSubSelector := "div.cont_sub"
+			if true == b.Has(contSubSelector) {
+				subBlock := b.El(contSubSelector)
+				contSub := subBlock.El("span.inner_link")
+				n2 := types.News{
+					NewsPage:       pageNum,
+					Order:          idx,
+					SubOrder:       1,
+					Publisher:      contSub.El("span.txt_cp").MustText(),
+					Title:          contSub.El("span.tit_sub").MustText(),
+					URL:            util.AnchorHREF(subBlock),
+					FullHTML:       dd.FullHTML(),
+					FullScreenShot: dd.FullScreenShot(),
+				}
+				newsList = append(newsList, n2)
 			}
-			newsList = append(newsList, n2)
 		}
 	}
 

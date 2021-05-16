@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/url"
+	"runtime/debug"
 	"time"
 
 	"github.com/darimuri/coll-news/pkg/cache"
@@ -36,6 +37,7 @@ func (p *Portal) Cleanup() {
 	for _, pg := range p.MustPages() {
 		pg.MustClose()
 	}
+	p.Browser.MustClose()
 }
 
 func (p *Portal) Top() {
@@ -89,16 +91,7 @@ func (p *Portal) openTab(url string) {
 func (p *Portal) GetTopNewsList() (news []types.News, retErr error) {
 	defer func() {
 		v := recover()
-		if v == nil {
-			return
-		}
-
-		switch t := v.(type) {
-		case error:
-			retErr = t
-		default:
-			retErr = fmt.Errorf("errorless panic %+v", v)
-		}
+		retErr = panicAsError(v)
 	}()
 
 	p.ScrollBottomHuman()
@@ -122,16 +115,7 @@ func (p *Portal) GetTopNewsList() (news []types.News, retErr error) {
 func (p *Portal) GetNewsHomeNewsList() (news []types.News, retErr error) {
 	defer func() {
 		v := recover()
-		if v == nil {
-			return
-		}
-
-		switch t := v.(type) {
-		case error:
-			retErr = t
-		default:
-			retErr = fmt.Errorf("errorless panic %+v", v)
-		}
+		retErr = panicAsError(v)
 	}()
 
 	dd := types.DumpDirectory{RootPath: p.dumpRoot, Source: "news", DumpTime: time.Now()}
@@ -148,6 +132,20 @@ func (p *Portal) GetNewsHomeNewsList() (news []types.News, retErr error) {
 	}
 
 	return p.collector.GetNewsHomeNewsList(p.PageTemplate, dd)
+}
+
+func panicAsError(v interface{}) (retErr error) {
+	if v == nil {
+		return
+	}
+
+	switch t := v.(type) {
+	case error:
+		retErr = fmt.Errorf(fmt.Sprintf("panic '%s' from stack:\n%s", t.Error(), string(debug.Stack())))
+	default:
+		retErr = fmt.Errorf("errorless panic %+v from %s", v, string(debug.Stack()))
+	}
+	return
 }
 
 func (p *Portal) GetNewsEnd(n *types.News) (retErr error) {

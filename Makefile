@@ -6,32 +6,33 @@ test:
 build-cmd:
 	CGO_ENABLED=0 go build -o news ./cmd/main.go
 
-image-build: build-cmd
+build-image: build-cmd
 	cp -a news docker/
 	docker build -t coll-news:latest docker
 
-image-tag:
+tag-image: build-image
 ifdef TAG
 	docker tag coll-news:latest dormael/coll-news:${TAG}
 else
 	@echo "TAG is required"
 endif
 
-image-push:
+push-image: tag-image
 ifdef TAG
 	docker push dormael/coll-news:${TAG}
 else
 	@echo "TAG is required"
 endif
 
-image-rm:
+rm-image:
 	docker rm coll-news
 	docker rmi coll-news:latest
 
-image-test:
+launch-image:
 	mkdir -p /home/dormael/coll-news
 	docker run -it --name coll-news -v /home/dormael/coll-news:/home/coll coll-news:latest bash
 
-image-run: image-build
+run-image: build-image
 	mkdir -p /home/dormael/coll-news
 	docker run -it --name coll-news -v /home/dormael/coll-news:/home/coll coll-news:latest news coll -t mobile -s daum -d ./coll_dir -e -l 3
+
