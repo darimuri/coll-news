@@ -458,7 +458,7 @@ func parseEmotions(articleBlock *rt.ElementTemplate, n *types.News) error {
 			}
 
 			if count, err := strconv.ParseInt(emotionCount, 10, 64); err != nil {
-				return err
+				n.End.Emotions = append(n.End.Emotions, types.Emotion{Name: emotionName, CountString: emotionCount})
 			} else {
 				n.End.Emotions = append(n.End.Emotions, types.Emotion{Name: emotionName, Count: count})
 			}

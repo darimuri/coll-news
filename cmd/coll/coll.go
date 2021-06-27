@@ -351,7 +351,11 @@ func toTable(news []types.News) [][]string {
 			modifiedAt = n.End.ModifiedAt
 
 			for _, e := range n.End.Emotions {
-				emotions = append(emotions, fmt.Sprintf("%s(%d)", e.Name, e.Count))
+				if e.CountString == "" {
+					emotions = append(emotions, fmt.Sprintf("%s(%d)", e.Name, e.Count))
+				} else {
+					emotions = append(emotions, fmt.Sprintf("%s(%s)", e.Name, e.CountString))
+				}
 			}
 		}
 

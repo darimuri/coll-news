@@ -151,6 +151,20 @@ func panicAsError(v interface{}) (retErr error) {
 func (p *Portal) GetNewsEnd(n *types.News) (retErr error) {
 	var end interface{}
 
+	defer func() {
+		v := recover()
+		if v == nil {
+			return
+		}
+
+		log.Println("panic occurred while getting new end for url", n.URL)
+		switch t := v.(type) {
+		case error:
+			log.Println("panic message", t)
+		}
+		panic(v)
+	}()
+
 	cacheKey := asKey(n.URL)
 	end, retErr = p.cache.Get(cacheKey, &types.End{})
 	if retErr != nil {

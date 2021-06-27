@@ -59,8 +59,9 @@ type End struct {
 }
 
 type Emotion struct {
-	Name  string
-	Count int64
+	Name        string
+	CountString string
+	Count       int64
 }
 
 func (n *News) ToString() string {
