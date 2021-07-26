@@ -2,6 +2,7 @@ package coll
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/darimuri/coll-news/pkg/cache"
 	"github.com/darimuri/coll-news/pkg/daum"
@@ -24,9 +25,12 @@ const (
 )
 
 type Option struct {
-	ChromeBin string
-	SavePath  string
-	Headless  bool
+	ChromeBin   string
+	SavePath    string
+	UserDataDir string
+	LogLevel    int
+	Headless    bool
+	Logging     bool
 }
 
 func NewCollector(collectSource, collectType string, option Option) (types.Collector, error) {
@@ -35,14 +39,32 @@ func NewCollector(collectSource, collectType string, option Option) (types.Colle
 	var profile types.Profile
 	var browser *rod.Browser
 
+	log.Println("new collector with option", option)
+
 	l := launcher.New()
 	if option.ChromeBin != "" {
 		l.Bin(option.ChromeBin)
 	}
+	if option.UserDataDir != "" {
+		l.UserDataDir(option.UserDataDir)
+	}
+	if option.Logging {
+		l.Set("enable-logging")
+		if option.LogLevel > 0 {
+			l.Set("v", fmt.Sprintf("%d", option.LogLevel))
+		}
+	}
+
+	delete(l.Flags, "disable-dev-shm-usage")
 
 	url, err := l.
 		Headless(option.Headless).
 		Devtools(false).
+		Set("no-sandbox").
+		//Set("disable-gpu").
+		//Set("disable-dev-shm-usage").
+		Set("no-zygote").
+		Set("single-process").
 		Set("start-maximized").
 		Launch()
 

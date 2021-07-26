@@ -6,6 +6,9 @@ test:
 build-cmd:
 	CGO_ENABLED=0 go build -o news ./cmd/main.go
 
+run-cmd:
+	CGO_ENABLED=0 go run ./cmd/main.go coll -t mobile -s daum -d ./coll_dir -e -l 10
+
 build-image: build-cmd
 	cp -a news docker/
 	docker build -t coll-news:latest docker

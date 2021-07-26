@@ -161,6 +161,8 @@ func (p *Portal) GetNewsEnd(n *types.News) (retErr error) {
 		switch t := v.(type) {
 		case error:
 			log.Println("panic message", t)
+			retErr = t
+			return
 		}
 		panic(v)
 	}()

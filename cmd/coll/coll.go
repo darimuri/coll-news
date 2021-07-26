@@ -18,6 +18,9 @@ import (
 
 	"github.com/darimuri/coll-news/pkg/coll"
 	"github.com/darimuri/coll-news/pkg/types"
+	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 	"golang.org/x/sys/unix"
 )
@@ -68,15 +71,17 @@ var (
 )
 
 var (
-	collectPeriod        time.Duration
-	collectType          string
-	collectSource        string
-	collectDirectoryPath string
-	listOutputFormat     string
-	chromeBin            string
-	disableHeadless      bool
-	endGetIgnoreError    bool
-	listGetRetryCount    int
+	collectPeriod          time.Duration
+	collectType            string
+	collectSource          string
+	collectDirectoryPath   string
+	listOutputFormat       string
+	chromeBin              string
+	disableHeadless        bool
+	endGetIgnoreError      bool
+	enableChromeLogging    bool
+	listGetRetryCount      int
+	chromeLoggingVerbosity int
 )
 
 var Command = &cobra.Command{
@@ -101,6 +106,8 @@ func init() {
 	Command.Flags().BoolVarP(&disableHeadless, "no-headless", "n", false, "collect news in non-headless mode")
 	Command.Flags().BoolVarP(&endGetIgnoreError, "end-get-ignore-error", "e", false, "continue collect end when error occurs")
 	Command.Flags().IntVarP(&listGetRetryCount, "list-get-retry-count", "l", 0, "retry count while getting list")
+	Command.Flags().BoolVarP(&enableChromeLogging, "enable-chrome-logging", "", false, "run chrome using --enable-logging")
+	Command.Flags().IntVarP(&chromeLoggingVerbosity, "chrome-logging-verbosity", "", 1, "run chrome using --v=1")
 
 	//goland:noinspection GoUnhandledErrorResult
 	Command.MarkFlagRequired("collect-type")
@@ -113,6 +120,15 @@ func init() {
 }
 
 func collect() error {
+	ec := echo.New()
+	go func() {
+		ec.Use(middleware.Recover())
+		ec.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
+		if err := ec.Start(":3000"); err != nil {
+			panic(err)
+		}
+	}()
+
 	savePath := filepath.Join(collectDirectoryPath, collectSource, collectType)
 
 	s := make(chan os.Signal, 1)
@@ -120,17 +136,17 @@ func collect() error {
 
 	signal.Notify(s, syscall.SIGINT, syscall.SIGTERM)
 
-	var finished time.Time
+	finished := time.Now()
+	startDelay := time.Second * 10
+	nextTrigger := finished.Add(startDelay)
 
-	log.Println("start collect news for period", collectPeriod)
-	nextTrigger := nowInLocalZone().Add(collectPeriod)
-	go func() {
-		e <- collectAndSave(savePath)
-	}()
+	log.Println("start collect news for period", collectPeriod, "after", startDelay)
+
 	for {
 		select {
 		case sig := <-s:
 			log.Println("stop collection with signal", sig)
+			ec.Close()
 			os.Exit(0)
 		case <-time.After(time.Second):
 			if false == finished.IsZero() && nextTrigger.Before(time.Now()) {
@@ -175,6 +191,8 @@ func collectAndSave(rootPath string) error {
 		ChromeBin: chromeBin,
 		SavePath:  dumpPath,
 		Headless:  !disableHeadless,
+		Logging:   enableChromeLogging,
+		LogLevel:  chromeLoggingVerbosity,
 	}
 
 	c, errColl := coll.NewCollector(collectSource, collectType, option)

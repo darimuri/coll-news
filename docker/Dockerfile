@@ -1,5 +1,5 @@
 # use alpine to build the image
-FROM alpine:latest
+FROM alpine:20210212
 
 ARG user=coll
 ARG group=coll
@@ -64,3 +64,5 @@ VOLUME $USER_HOME
 WORKDIR $USER_HOME
 
 USER ${user}
+
+EXPOSE 3000
