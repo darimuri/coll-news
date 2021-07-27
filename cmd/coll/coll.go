@@ -137,10 +137,7 @@ func collect() error {
 	signal.Notify(s, syscall.SIGINT, syscall.SIGTERM)
 
 	finished := time.Now()
-	startDelay := time.Second * 10
-	nextTrigger := finished.Add(startDelay)
-
-	log.Println("start collect news for period", collectPeriod, "after", startDelay)
+	nextTrigger := finished
 
 	for {
 		select {

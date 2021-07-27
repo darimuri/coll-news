@@ -55,14 +55,12 @@ func NewCollector(collectSource, collectType string, option Option) (types.Colle
 		}
 	}
 
-	delete(l.Flags, "disable-dev-shm-usage")
-
 	url, err := l.
 		Headless(option.Headless).
 		Devtools(false).
 		Set("no-sandbox").
 		//Set("disable-gpu").
-		//Set("disable-dev-shm-usage").
+		Set("disable-dev-shm-usage").
 		Set("no-zygote").
 		Set("single-process").
 		Set("start-maximized").

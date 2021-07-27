@@ -37,5 +37,5 @@ launch-image:
 
 run-image: build-image
 	mkdir -p /home/dormael/coll-news
-	docker run -it --name coll-news -v /dev/shm:/dev/shm -v /home/dormael/coll-news:/home/coll coll-news:latest news coll --enable-chrome-logging -t mobile -s daum -d ./coll_dir -e -l 3
+	docker run -it --name coll-news -v /home/dormael/coll-news:/home/coll coll-news:latest news coll -t mobile -s daum -d ./coll_dir -e -l 3
 
