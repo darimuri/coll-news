@@ -82,6 +82,7 @@ var (
 	enableChromeLogging    bool
 	listGetRetryCount      int
 	chromeLoggingVerbosity int
+	metricsPort            int
 )
 
 var Command = &cobra.Command{
@@ -97,7 +98,7 @@ var Command = &cobra.Command{
 }
 
 func init() {
-	Command.Flags().StringVarP(&chromeBin, "chrome-bin", "b", "/usr/bin/chromium-browser", "chrome browser binary path")
+	Command.Flags().StringVarP(&chromeBin, "chrome-bin", "b", "", "chrome browser binary path")
 	Command.Flags().DurationVarP(&collectPeriod, "collect-period", "p", time.Minute*10, "period between every news collection")
 	Command.Flags().StringVarP(&collectType, "collect-type", "t", "", fmt.Sprintf("collect news type(%s)", coll.Types))
 	Command.Flags().StringVarP(&collectSource, "collect-news-source", "s", "", fmt.Sprintf("news source(%s)", coll.Sources))
@@ -108,6 +109,7 @@ func init() {
 	Command.Flags().IntVarP(&listGetRetryCount, "list-get-retry-count", "l", 0, "retry count while getting list")
 	Command.Flags().BoolVarP(&enableChromeLogging, "enable-chrome-logging", "", false, "run chrome using --enable-logging")
 	Command.Flags().IntVarP(&chromeLoggingVerbosity, "chrome-logging-verbosity", "", 1, "run chrome using --v=1")
+	Command.Flags().IntVarP(&metricsPort, "metrics-port", "", 3000, "port for golang metrics")
 
 	//goland:noinspection GoUnhandledErrorResult
 	Command.MarkFlagRequired("collect-type")
@@ -124,7 +126,7 @@ func collect() error {
 	go func() {
 		ec.Use(middleware.Recover())
 		ec.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
-		if err := ec.Start(":3000"); err != nil {
+		if err := ec.Start(fmt.Sprintf(":%d", metricsPort)); err != nil {
 			panic(err)
 		}
 	}()
@@ -185,11 +187,14 @@ func collectAndSave(rootPath string) error {
 	}
 
 	option := coll.Option{
-		ChromeBin: chromeBin,
-		SavePath:  dumpPath,
-		Headless:  !disableHeadless,
-		Logging:   enableChromeLogging,
-		LogLevel:  chromeLoggingVerbosity,
+		SavePath: dumpPath,
+		Headless: !disableHeadless,
+		Logging:  enableChromeLogging,
+		LogLevel: chromeLoggingVerbosity,
+	}
+
+	if chromeBin != "" {
+		option.ChromeBin = chromeBin
 	}
 
 	c, errColl := coll.NewCollector(collectSource, collectType, option)

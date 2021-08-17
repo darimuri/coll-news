@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/dormael/go-lib/rodtemplate"
+	"github.com/darimuri/go-lib/rodtemplate"
 )
 
 type Collector interface {

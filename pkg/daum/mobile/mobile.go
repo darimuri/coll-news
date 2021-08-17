@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dormael/go-lib/rodtemplate"
-	rt "github.com/dormael/go-lib/rodtemplate"
+	"github.com/darimuri/go-lib/rodtemplate"
+	rt "github.com/darimuri/go-lib/rodtemplate"
 
 	"github.com/darimuri/coll-news/pkg/types"
 	"github.com/darimuri/coll-news/pkg/util"

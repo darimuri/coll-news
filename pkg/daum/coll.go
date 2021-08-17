@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/darimuri/coll-news/pkg/cache"
-	rt "github.com/dormael/go-lib/rodtemplate"
+	rt "github.com/darimuri/go-lib/rodtemplate"
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/cdp"
 

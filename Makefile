@@ -6,23 +6,24 @@ test:
 build-cmd:
 	CGO_ENABLED=0 go build -o news ./cmd/main.go
 
-run-cmd:
-	CGO_ENABLED=0 go run ./cmd/main.go coll -t mobile -s daum -d ./coll_dir -e -l 10
+run-cmd: build-cmd
+	mkdir -p `pwd`/coll_dir
+	./news coll -t mobile -s daum -d ./coll_dir -e -l 3 -b /usr/bin/chromium-browser
 
 build-image: build-cmd
 	cp -a news docker/
-	docker build -t coll-news:latest docker
+	docker build -t coll-news:latest ./docker
 
 tag-image: build-image
 ifdef TAG
-	docker tag coll-news:latest dormael/coll-news:${TAG}
+	docker tag coll-news:latest darimuri/coll-news:${TAG}
 else
 	@echo "TAG is required"
 endif
 
 push-image: tag-image
 ifdef TAG
-	docker push dormael/coll-news:${TAG}
+	docker push darimuri/coll-news:${TAG}
 else
 	@echo "TAG is required"
 endif
@@ -32,10 +33,10 @@ rm-image:
 	docker rmi coll-news:latest
 
 launch-image:
-	mkdir -p /home/dormael/coll-news
-	docker run -it --name coll-news -v /home/dormael/coll-news:/home/coll coll-news:latest bash
+	mkdir -p `pwd`/coll_dir
+	docker run -it --name coll-news -v `pwd`/coll_dir:/home/coll/coll_dir coll-news:latest bash
 
 run-image: build-image
-	mkdir -p /home/dormael/coll-news
-	docker run -it --name coll-news -v /home/dormael/coll-news:/home/coll coll-news:latest news coll -t mobile -s daum -d ./coll_dir -e -l 3
+	mkdir -p `pwd`/coll_dir
+	docker run -it --name coll-news -v `pwd`/coll_dir:/home/coll/coll_dir coll-news:latest news coll -t mobile -s daum -d ./coll_dir -e -l 3 -b /usr/bin/chromium-browser
 

@@ -1,0 +1,60 @@
+{
+   "cap_add" : null,
+   "cap_drop" : null,
+   "cmd" : "news coll -t mobile -s daum -d ./coll_dir -e -l 10 -b /usr/bin/chromium-browser",
+   "cpu_priority" : 0,
+   "devices" : null,
+   "enable_publish_all_ports" : false,
+   "enable_restart_policy" : false,
+   "enabled" : true,
+   "env_variables" : [
+      {
+         "key" : "PATH",
+         "value" : "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+      },
+      {
+         "key" : "CHROME_BIN",
+         "value" : "/usr/bin/chromium-browser"
+      },
+      {
+         "key" : "CHROME_PATH",
+         "value" : "/usr/lib/chromium/"
+      }
+   ],
+   "exporting" : false,
+   "image" : "darimuri/coll-news:v0.1.11",
+   "is_ddsm" : false,
+   "is_package" : false,
+   "links" : [],
+   "memory_limit" : 0,
+   "name" : "coll-news",
+   "network" : [
+      {
+         "driver" : "bridge",
+         "name" : "coll_news_default"
+      }
+   ],
+   "network_mode" : "coll_news_default",
+   "port_bindings" : [
+      {
+         "container_port" : 13000,
+         "host_port" : 3000,
+         "type" : "tcp"
+      }
+   ],
+   "privileged" : false,
+   "shortcut" : {
+      "enable_shortcut" : false,
+      "enable_status_page" : false,
+      "enable_web_page" : false,
+      "web_page_url" : ""
+   },
+   "use_host_network" : false,
+   "volume_bindings" : [
+      {
+         "host_volume_file" : "/apps/coll_news/coll_dir",
+         "mount_point" : "/home/coll/coll_dir",
+         "type" : "rw"
+      }
+   ]
+}

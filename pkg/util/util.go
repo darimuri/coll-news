@@ -3,7 +3,7 @@ package util
 import (
 	"strings"
 
-	"github.com/dormael/go-lib/rodtemplate"
+	"github.com/darimuri/go-lib/rodtemplate"
 )
 
 func EmptyIfNilString(s *string) string {

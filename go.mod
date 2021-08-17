@@ -6,7 +6,7 @@ require (
 	github.com/PraserX/atomic-cache v1.2.1
 	github.com/allegro/bigcache v1.2.1 // indirect
 	github.com/coocood/freecache v1.1.1 // indirect
-	github.com/dormael/go-lib v0.1.7
+	github.com/darimuri/go-lib v0.1.7
 	github.com/emirpasic/gods v1.12.0 // indirect
 	github.com/go-rod/rod v0.101.0
 	github.com/labstack/echo v3.3.10+incompatible
@@ -18,4 +18,4 @@ require (
 	golang.org/x/sys v0.0.0-20210403161142-5e06dd20ab57
 )
 
-//replace github.com/dormael/go-lib v0.1.7 => /home/dormael/my/clone/github.com/dormael/go-lib
+//replace github.com/darimuri/go-lib v0.1.7 => ../go-lib
