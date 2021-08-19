@@ -152,7 +152,7 @@ func collect() error {
 				finished = time.Time{}
 				nextTrigger = time.Now().Add(collectPeriod)
 				go func() {
-					e <- collectAndSave(savePath)
+					e <- collectAndSave(savePath, collectSource, collectType)
 				}()
 			}
 		case collErr := <-e:
@@ -171,7 +171,7 @@ func collect() error {
 	return nil
 }
 
-func collectAndSave(rootPath string) error {
+func collectAndSave(rootPath string, collectSource string, collectType string) error {
 	started := nowInLocalZone()
 
 	log.Println("collect news", collectSource, collectType, "to", rootPath)
@@ -187,10 +187,11 @@ func collectAndSave(rootPath string) error {
 	}
 
 	option := coll.Option{
-		SavePath: dumpPath,
-		Headless: !disableHeadless,
-		Logging:  enableChromeLogging,
-		LogLevel: chromeLoggingVerbosity,
+		SavePath:    dumpPath,
+		Headless:    !disableHeadless,
+		Logging:     enableChromeLogging,
+		LogLevel:    chromeLoggingVerbosity,
+		UserDataDir: filepath.Join("/tmp/rod", collectSource, collectType),
 	}
 
 	if chromeBin != "" {

@@ -42,11 +42,11 @@ func NewCollector(collectSource, collectType string, option Option) (types.Colle
 	log.Println("new collector with option", option)
 
 	l := launcher.New()
-	if option.ChromeBin != "" {
-		l.Bin(option.ChromeBin)
-	}
 	if option.UserDataDir != "" {
 		l.UserDataDir(option.UserDataDir)
+	}
+	if option.ChromeBin != "" {
+		l.Bin(option.ChromeBin)
 	}
 	if option.Logging {
 		l.Set("enable-logging")
