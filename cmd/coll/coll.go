@@ -171,7 +171,7 @@ func collect() error {
 	return nil
 }
 
-func collectAndSave(rootPath string, collectSource string, collectType string) error {
+func collectAndSave(rootPath string, collectSource string, collectType string) (retErr error) {
 	started := nowInLocalZone()
 
 	log.Println("collect news", collectSource, collectType, "to", rootPath)
@@ -204,6 +204,17 @@ func collectAndSave(rootPath string, collectSource string, collectType string) e
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			switch v := r.(type) {
+			case error:
+				retErr = v
+				return
+			default:
+				retErr = fmt.Errorf("unknown panic cause %+v", v)
+				return
+			}
+		}
+
 		if c != nil {
 			c.Cleanup()
 		}
