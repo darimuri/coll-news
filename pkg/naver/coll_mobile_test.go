@@ -1,18 +1,19 @@
-package daum
+package naver
 
 import (
 	"github.com/darimuri/coll-news/pkg/adaptor"
 	"github.com/go-rod/rod"
+	"github.com/go-rod/rod/lib/devices"
 	"github.com/go-rod/rod/lib/launcher"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/darimuri/coll-news/pkg/daum/pc"
+	"github.com/darimuri/coll-news/pkg/naver/mobile"
 	"github.com/darimuri/coll-news/pkg/test"
 	"github.com/darimuri/coll-news/pkg/types"
 )
 
-var _ = Describe("daum news pc", func() {
+var _ = Describe("naver news mobile", func() {
 	var browser *rod.Browser
 	var cut types.Collector
 
@@ -25,7 +26,7 @@ var _ = Describe("daum news pc", func() {
 
 		Expect(err).Should(BeNil())
 
-		browser = rod.New()
+		browser = rod.New().DefaultDevice(devices.IPhone6or7or8)
 		err = browser.
 			ControlURL(url).
 			//Trace(true).
@@ -33,7 +34,7 @@ var _ = Describe("daum news pc", func() {
 			Connect()
 		Expect(err).Should(BeNil())
 
-		cut, err = NewPortal(browser, types.PC(), pc.New(), "../../test/daum/pc", endCache)
+		cut, err = NewPortal(browser, types.Mobile(), mobile.New(), "../../test/naver/mobile", endCache)
 		Expect(err).Should(BeNil())
 	})
 
@@ -59,7 +60,7 @@ var _ = Describe("daum news pc", func() {
 				Expect(n.Order).Should(BeNumerically(">=", 0))
 				Expect(n.FullHTML).ShouldNot(BeEmpty())
 				Expect(n.FullScreenShot).ShouldNot(BeEmpty())
-				Expect(n.TabScreenShot).ShouldNot(BeEmpty())
+				//Expect(n.TabScreenShot).ShouldNot(BeEmpty())
 
 				err = cut.GetNewsEnd(&n)
 				_, typedError := err.(adaptor.TypedError)
@@ -85,35 +86,13 @@ var _ = Describe("daum news pc", func() {
 				Expect(n.Order).Should(BeNumerically(">=", 0))
 				Expect(n.FullHTML).ShouldNot(BeEmpty())
 				Expect(n.FullScreenShot).ShouldNot(BeEmpty())
-				Expect(n.TabScreenShot).ShouldNot(BeEmpty())
+				//Expect(n.TabScreenShot).ShouldNot(BeEmpty())
 
 				err = cut.GetNewsEnd(&n)
 				_, typedError := err.(adaptor.TypedError)
 				if false == typedError {
 					Expect(err).Should(BeNil(), "error getting top news end %v", n)
 				}
-			}
-		})
-
-		It("new end ModifiedAt is correct for author is 고수정", func() {
-			cut.Top()
-			n := types.News{URL: "https://news.v.daum.net/v/20211016040021618"}
-			err := cut.GetNewsEnd(&n)
-			_, typedError := err.(adaptor.TypedError)
-			if false == typedError {
-				Expect(err).Should(BeNil(), "error getting top news end %v", n)
-			}
-
-			Expect(n.End.ModifiedAt).Should(BeEmpty())
-		})
-
-		It("new end causes no error div[id=kakaoContent] block is missing", func() {
-			cut.Top()
-			n := types.News{URL: "https://content.v.daum.net/v/kWGY0DyI9E"}
-			err := cut.GetNewsEnd(&n)
-			_, typedError := err.(adaptor.TypedError)
-			if false == typedError {
-				Expect(err).Should(BeNil(), "error getting top news end %v", n)
 			}
 		})
 	})

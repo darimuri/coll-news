@@ -1,6 +1,7 @@
 package daum
 
 import (
+	"github.com/darimuri/coll-news/pkg/adaptor"
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/devices"
 	"github.com/go-rod/rod/lib/launcher"
@@ -62,7 +63,10 @@ var _ = Describe("daum news mobile", func() {
 				//Expect(n.TabScreenShot).ShouldNot(BeEmpty())
 
 				err = cut.GetNewsEnd(&n)
-				Expect(err).Should(BeNil(), "error getting top news end %v", n)
+				_, typedError := err.(adaptor.TypedError)
+				if false == typedError {
+					Expect(err).Should(BeNil(), "error getting top news end %v", n)
+				}
 			}
 		})
 
@@ -85,7 +89,20 @@ var _ = Describe("daum news mobile", func() {
 				//Expect(n.TabScreenShot).ShouldNot(BeEmpty())
 
 				err = cut.GetNewsEnd(&n)
-				Expect(err).Should(BeNil(), "err getting new home news end %v", n)
+				_, typedError := err.(adaptor.TypedError)
+				if false == typedError {
+					Expect(err).Should(BeNil(), "error getting top news end %v", n)
+				}
+			}
+		})
+
+		It("new end causes no error failed to find content block from url", func() {
+			cut.Top()
+			n := types.News{URL: "https://tv.kakao.com/m/channel/3443434/cliplink/423110964"}
+			err := cut.GetNewsEnd(&n)
+			_, typedError := err.(adaptor.TypedError)
+			if false == typedError {
+				Expect(err).Should(BeNil(), "error getting top news end %v", n)
 			}
 		})
 	})

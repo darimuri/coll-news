@@ -1,4 +1,4 @@
-package daum
+package naver
 
 import (
 	rt "github.com/darimuri/go-lib/rodtemplate"
@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	topNewsURL  = "https://www.daum.net/" //https://m.daum.net/?nil_top=mobile
-	newsHomeURL = "https://news.daum.net/"
+	topNewsURL  = "https://www.naver.com/"
+	newsHomeURL = "https://news.naver.com/"
 )
 
 var _ types.Collector = (*Collector)(nil)

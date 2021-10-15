@@ -258,12 +258,17 @@ func (_ *pc) GetTopNewsList(p *rodtemplate.PageTemplate, dd types.DumpDirectory)
 func (_ *pc) GetNewsEnd(p *rt.PageTemplate, n *types.News) error {
 	var contentBlock *rt.ElementTemplate
 
-	if p.Has("div[id=daumContent]") {
-		contentBlock = p.SelectOrPanic("div[id=daumContent]")
-	} else if p.Has("main[id=daumContent]") {
-		contentBlock = p.SelectOrPanic("main[id=daumContent]")
+	divDaumContentSelector := "div[id=daumContent]"
+	mainDaumContentSelector := "main[id=daumContent]"
+	divKakaoContentSelector := "div[id=kakaoContent]"
+	if p.Has(divDaumContentSelector) {
+		contentBlock = p.SelectOrPanic(divDaumContentSelector)
+	} else if p.Has(mainDaumContentSelector) {
+		contentBlock = p.SelectOrPanic(mainDaumContentSelector)
+	} else if p.Has(divKakaoContentSelector) {
+		contentBlock = p.SelectOrPanic(divKakaoContentSelector)
 	} else {
-		contentBlock = p.SelectOrPanic("div[id=kakaoContent]")
+		contentBlock = p.SelectOrPanic("main[id=kakaoContent]")
 	}
 
 	mainBlockSelector := "div[id=cMain]"
@@ -291,10 +296,10 @@ func (_ *pc) GetNewsEnd(p *rt.PageTemplate, n *types.News) error {
 		spanS := infoBlock.Els("span[class=txt_info]")
 		for idx := range spanS {
 			spText := spanS[idx].MustText()
-			if strings.Contains(spText, "입력") {
-				n.End.PostedAt = strings.TrimSpace(strings.ReplaceAll(spText, "입력", ""))
-			} else if strings.Contains(spText, "수정") {
-				n.End.ModifiedAt = strings.TrimSpace(strings.ReplaceAll(spText, "수정", ""))
+			if strings.Contains(spText, "입력 ") {
+				n.End.PostedAt = strings.TrimSpace(strings.ReplaceAll(spText, "입력 ", ""))
+			} else if strings.Contains(spText, "수정 ") {
+				n.End.ModifiedAt = strings.TrimSpace(strings.ReplaceAll(spText, "수정 ", ""))
 			} else {
 				n.End.Author = strings.TrimSpace(spText)
 			}

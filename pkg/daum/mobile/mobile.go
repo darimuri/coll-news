@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/darimuri/coll-news/pkg/adaptor"
 	"github.com/darimuri/go-lib/rodtemplate"
 	rt "github.com/darimuri/go-lib/rodtemplate"
 
@@ -21,6 +22,10 @@ const (
 var _ types.TypedCollector = (*mobile)(nil)
 
 type mobile struct {
+}
+
+func New() *mobile {
+	return &mobile{}
 }
 
 func (_ mobile) PrepareNewsHomeScreenShot(p *rt.PageTemplate) {
@@ -265,6 +270,8 @@ func (_ mobile) GetNewsEnd(p *rodtemplate.PageTemplate, n *types.News) error {
 		contentBlock = p.SelectOrPanic(kakaoSelector)
 	} else if p.Has(daumSelector) {
 		contentBlock = p.SelectOrPanic(daumSelector)
+	} else if p.Has("main[class=doc-main]") {
+		return adaptor.NewTypedError("main[class=doc-main] is not supported content block")
 	} else {
 		return fmt.Errorf("failed to find content block from url %s", n.URL)
 	}
@@ -286,7 +293,13 @@ func (_ mobile) GetNewsEnd(p *rodtemplate.PageTemplate, n *types.News) error {
 		articleBlock := mArticleBlock.SelectOrPanic(articleSelector)
 		headBlock := contentBlock.SelectOrPanic("div[class=head_view]")
 
-		cpBlock := headBlock.El("em[class=info_cp] > a[class=link_cp] > picture")
+		cpBlockSelector := "em[class=info_cp] > a[class=link_cp] > picture"
+
+		if false == headBlock.Has(cpBlockSelector) {
+			return adaptor.CPBlockNotFound
+		}
+
+		cpBlock := headBlock.El(cpBlockSelector)
 
 		n.End.Provider = util.ImgALT(cpBlock)
 		if n.End.Provider == "" {
@@ -529,8 +542,4 @@ func parseTextItem(item *rodtemplate.ElementTemplate, idx int) types.News {
 		Order: idx,
 	}
 	return news
-}
-
-func New() *mobile {
-	return &mobile{}
 }
