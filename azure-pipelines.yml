@@ -20,6 +20,47 @@ variables:
   vmImageName: 'ubuntu-latest'
 
 stages:
+- stage: Test
+  displayName: Test
+  jobs:
+  - job: Prepare
+    displayName: Prepare Test
+    pool:
+      vmImage: $(vmImageName)
+    steps:
+    - task: GoTool@0
+      inputs:
+        version: '1.13.5'
+    - task: Go@0
+      inputs:
+        command: 'get'
+        arguments: '-d'
+        workingDirectory: '$(System.DefaultWorkingDirectory)'
+    - task: Go@0
+      inputs:
+        command: 'build'
+        workingDirectory: '$(System.DefaultWorkingDirectory)'
+    - task: CopyFiles@2
+      inputs:
+        TargetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: PublishBuildArtifacts@1
+      inputs:
+        artifactName: drop
+  - job: Test
+    displayName: Run Test
+    pool:
+      vmImage: $(vmImageName)
+    steps:
+    - task: Go@0
+      env:
+        CGO_ENABLED: 0
+        TEST_HEADLESS: 1
+      inputs:
+        command: 'test'
+        arguments: '-p 1 -count 1 -timeout 30m ./...'
+        workingDirectory: '$(modulePath)'
+    
+    
 - stage: Build
   displayName: Build and push stage
   jobs:
