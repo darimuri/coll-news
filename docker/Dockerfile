@@ -1,3 +1,7 @@
+FROM golang:1.13.8-alpine3.11 AS build
+
+RUN CGO_ENABLED=0 go build -o news ./cmd/main.go
+
 # use alpine to build the image
 FROM zenika/alpine-chrome:89-with-chromedriver
 
@@ -25,7 +29,7 @@ RUN apk update && apk add --no-cache bash \
 RUN apk add font-noto-emoji --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
 
 COPY fonts-local.conf /etc/fonts/local.conf
-COPY news /usr/bin/news
+COPY --from=build news /usr/bin/news
 
 # timezone support
 RUN cp /usr/share/zoneinfo/Asia/Seoul /etc/localtime \
