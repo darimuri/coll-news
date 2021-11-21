@@ -58,7 +58,7 @@ stages:
       inputs:
         command: 'test'
         arguments: '-p 1 -count 1 -timeout 30m ./...'
-        workingDirectory: '$(modulePath)'
+        workingDirectory: '$(Build.SourcesDirectory)'
     
     
 - stage: Build
