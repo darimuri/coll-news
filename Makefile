@@ -29,8 +29,8 @@ else
 endif
 
 rm-image:
-	docker rm coll-news
-	docker rmi coll-news:latest
+	docker rm coll-news 2> /dev/null || exit 0
+	docker rmi coll-news:latest 2> /dev/null || exit 0
 
 launch-image:
 	mkdir -p `pwd`/coll_dir
