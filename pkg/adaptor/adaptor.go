@@ -6,11 +6,11 @@ import (
 	"io/ioutil"
 	"log"
 	"net/url"
-	"runtime/debug"
 	"time"
 
 	"github.com/darimuri/coll-news/pkg/cache"
 	"github.com/darimuri/coll-news/pkg/types"
+	"github.com/darimuri/coll-news/pkg/util"
 	rt "github.com/darimuri/go-lib/rodtemplate"
 	"github.com/go-rod/rod/lib/cdp"
 )
@@ -93,7 +93,7 @@ func (a *Adaptor) OpenTab(url string) {
 func (a *Adaptor) GetTopNewsList() (news []types.News, retErr error) {
 	defer func() {
 		v := recover()
-		retErr = panicAsError(v)
+		retErr = util.PanicAsError(v)
 	}()
 
 	a.ScrollBottomHuman()
@@ -117,7 +117,7 @@ func (a *Adaptor) GetTopNewsList() (news []types.News, retErr error) {
 func (a *Adaptor) GetNewsHomeNewsList() (news []types.News, retErr error) {
 	defer func() {
 		v := recover()
-		retErr = panicAsError(v)
+		retErr = util.PanicAsError(v)
 	}()
 
 	dd := types.DumpDirectory{RootPath: a.DumpRoot, Source: "news", DumpTime: time.Now()}
@@ -227,18 +227,4 @@ func asKey(k string) string {
 	}
 
 	return fmt.Sprintf("%s://%s%s", u.Scheme, u.Host, u.Path)
-}
-
-func panicAsError(v interface{}) (retErr error) {
-	if v == nil {
-		return
-	}
-
-	switch t := v.(type) {
-	case error:
-		retErr = fmt.Errorf(fmt.Sprintf("panic '%s' from stack:\n%s", t.Error(), string(debug.Stack())))
-	default:
-		retErr = fmt.Errorf("errorless panic %+v from %s", v, string(debug.Stack()))
-	}
-	return
 }

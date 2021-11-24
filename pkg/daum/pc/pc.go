@@ -31,11 +31,11 @@ func (_ *pc) PrepareNewsHomeScreenShot(_ *rt.PageTemplate) {
 }
 
 func (_ *pc) GetNewsHomeNewsList(p *rodtemplate.PageTemplate, dd types.DumpDirectory) ([]types.News, error) {
+	newsList := make([]types.News, 0)
+
 	newsSubBlock := p.SelectOrPanic("#cSub")
 	newsMainBlock := p.SelectOrPanic("#cMain")
 	newsArticleBlock := newsMainBlock.SelectOrPanic("#mArticle")
-
-	newsList := make([]types.News, 0)
 
 	pageNum := 1
 	subListSelector := "ul[class=list_issue]"
