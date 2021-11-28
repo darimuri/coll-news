@@ -6,7 +6,7 @@ require (
 	github.com/PraserX/atomic-cache v1.2.1
 	github.com/allegro/bigcache v1.2.1 // indirect
 	github.com/coocood/freecache v1.1.1 // indirect
-	github.com/darimuri/go-lib v0.1.8
+	github.com/darimuri/go-lib v0.2.0
 	github.com/emirpasic/gods v1.12.0 // indirect
 	github.com/go-rod/rod v0.101.0
 	github.com/labstack/echo v3.3.10+incompatible
@@ -23,4 +23,4 @@ require (
 	golang.org/x/text v0.3.6 // indirect
 )
 
-//replace github.com/darimuri/go-lib v0.1.8 => ../go-lib
+//replace github.com/darimuri/go-lib v0.2.0 => ../go-lib

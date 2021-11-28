@@ -72,6 +72,16 @@ func (n *News) ToString() string {
 	return string(m)
 }
 
+func (n *News) SetContextData(page int, order int, subOrder int, dd DumpDirectory) {
+	n.Order = order
+	n.SubOrder = subOrder
+	n.NewsPage = page
+	n.FullHTML = dd.FullHTML()
+	n.FullScreenShot = dd.FullScreenShot()
+	n.TabScreenShot = dd.TabScreenShot(page)
+
+}
+
 type DumpDirectory struct {
 	RootPath string
 	Source   string
