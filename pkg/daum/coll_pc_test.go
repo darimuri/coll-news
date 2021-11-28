@@ -116,5 +116,15 @@ var _ = Describe("daum news pc", func() {
 				Expect(err).Should(BeNil(), "error getting top news end %v", n)
 			}
 		})
+
+		It("news end causes no error div[id=cFeature] block is missing", func() {
+			cut.Top()
+			n := types.News{URL: "https://sports.daum.net/video/424281511"}
+			err := cut.GetNewsEnd(&n)
+			_, typedError := err.(adaptor.TypedError)
+			if false == typedError {
+				Expect(err).Should(BeNil(), "error getting top news end %v", n)
+			}
+		})
 	})
 })
