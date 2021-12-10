@@ -23,4 +23,4 @@ require (
 	golang.org/x/text v0.3.6 // indirect
 )
 
-//replace github.com/darimuri/go-lib v0.2.0 => ../go-lib
+//replace github.com/darimuri/go-lib v0.2.1 => ../go-lib
