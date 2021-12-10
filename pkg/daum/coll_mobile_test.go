@@ -1,12 +1,13 @@
 package daum
 
 import (
-	"github.com/darimuri/coll-news/pkg/adaptor"
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/devices"
 	"github.com/go-rod/rod/lib/launcher"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"github.com/darimuri/coll-news/pkg/adaptor"
 
 	"github.com/darimuri/coll-news/pkg/daum/mobile"
 	"github.com/darimuri/coll-news/pkg/test"
