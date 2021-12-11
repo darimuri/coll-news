@@ -198,7 +198,7 @@ func (_ *pc) GetTopNewsList(p *rodtemplate.PageTemplate, dd types.DumpDirectory)
 		mediaBlock.MustWaitVisible()
 
 		currentNewsPage := newsPagerBlock.El("strong[class=screen_out]").MustText()
-		currentMediaPage := mediaBlock.El("strong[id=mediaPageNum]").MustText()
+		currentMediaPage := mediaBlock.El("strong[class=num_index]").MustText()
 
 		pageNum, err := strconv.Atoi(currentMediaPage)
 		if err != nil {
