@@ -150,7 +150,7 @@ func (*pc) GetTopNewsList(p *rodtemplate.PageTemplate, dd types.DumpDirectory) (
 
 	newsPagerBlock := mediaBlock.El("div[class=page_tabcont]")
 
-	for {
+	for i := 0; i < 10; i++ {
 		mediaBlock.MustWaitLoad()
 		mediaBlock.MustWaitStable()
 		mediaBlock.MustWaitVisible()
@@ -199,7 +199,7 @@ func (*pc) GetTopNewsList(p *rodtemplate.PageTemplate, dd types.DumpDirectory) (
 
 		newMapByTab[pageNum] = currentNewsPage
 
-		if len(newMapByTab) == 3 {
+		if len(newMapByTab) == 2 {
 			break
 		}
 
