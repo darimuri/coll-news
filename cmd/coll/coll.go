@@ -16,13 +16,14 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/darimuri/coll-news/pkg/coll"
-	"github.com/darimuri/coll-news/pkg/types"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 	"golang.org/x/sys/unix"
+
+	"github.com/darimuri/coll-news/pkg/coll"
+	"github.com/darimuri/coll-news/pkg/types"
 )
 
 const (
@@ -228,7 +229,7 @@ func collectAndSave(rootPath string, collectSource string, collectType string) (
 	var err error
 
 	for {
-		log.Println("get top news list", listGetErrorCount, "<", listGetRetryCount)
+		log.Printf("get top news list for error count(%d) < retry count(%d)\n", listGetErrorCount, listGetRetryCount)
 
 		c.Top()
 		collectedAt = nowInLocalZone().Format(types.DataDateTimeFormat)
@@ -249,27 +250,34 @@ func collectAndSave(rootPath string, collectSource string, collectType string) (
 		return err
 	}
 
+	//TODO: daum pc GetNewsHomeNewsList error should be fixed.
+	// https://github.com/darimuri/coll-news/issues/8
+	// skip while this issue is resolved
 	listGetErrorCount = 0
-	for {
-		log.Println("get news home news list", listGetErrorCount, "<", listGetRetryCount)
+	if collectSource == coll.Daum && collectType == coll.PC {
+		log.Println("skip news home news list for https://github.com/darimuri/coll-news/issues/8")
+	} else {
+		for {
+			log.Printf("get news home news list for error count(%d) < retry count(%d)\n", listGetErrorCount, listGetRetryCount)
 
-		c.NewsHome()
-		collectedAt = time.Now().Format(types.DataDateTimeFormat)
-		homeNews, err = c.GetNewsHomeNewsList()
+			c.NewsHome()
+			collectedAt = time.Now().Format(types.DataDateTimeFormat)
+			homeNews, err = c.GetNewsHomeNewsList()
 
-		if err == nil {
-			break
+			if err == nil {
+				break
+			}
+
+			log.Println("failed to get news home news list for", err)
+			time.Sleep(time.Second)
+
+			if listGetErrorCount < listGetRetryCount {
+				listGetErrorCount++
+				continue
+			}
+
+			return err
 		}
-
-		log.Println("failed to get news home news list for", err)
-		time.Sleep(time.Second)
-
-		if listGetErrorCount < listGetRetryCount {
-			listGetErrorCount++
-			continue
-		}
-
-		return err
 	}
 
 	for i := range topNews {
