@@ -254,7 +254,9 @@ func collectAndSave(rootPath string, collectSource string, collectType string) (
 	// https://github.com/darimuri/coll-news/issues/8
 	// skip while this issue is resolved
 	listGetErrorCount = 0
-	if collectSource != coll.Daum && collectType != coll.PC {
+	if collectSource == coll.Daum && collectType == coll.PC {
+		log.Println("skip news home news list for https://github.com/darimuri/coll-news/issues/8")
+	} else {
 		for {
 			log.Printf("get news home news list for error count(%d) < retry count(%d)\n", listGetErrorCount, listGetRetryCount)
 
@@ -276,8 +278,6 @@ func collectAndSave(rootPath string, collectSource string, collectType string) (
 
 			return err
 		}
-	} else {
-		log.Println("skip news home news list for https://github.com/darimuri/coll-news/issues/8")
 	}
 
 	for i := range topNews {
