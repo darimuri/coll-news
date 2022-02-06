@@ -81,6 +81,7 @@ var (
 	disableHeadless        bool
 	endGetIgnoreError      bool
 	enableChromeLogging    bool
+	stopAfterCollect       bool
 	listGetRetryCount      int
 	chromeLoggingVerbosity int
 	metricsPort            int
@@ -111,6 +112,7 @@ func init() {
 	Command.Flags().BoolVarP(&enableChromeLogging, "enable-chrome-logging", "", false, "run chrome using --enable-logging")
 	Command.Flags().IntVarP(&chromeLoggingVerbosity, "chrome-logging-verbosity", "", 1, "run chrome using --v=1")
 	Command.Flags().IntVarP(&metricsPort, "metrics-port", "", 3000, "port for golang metrics")
+	Command.Flags().BoolVarP(&stopAfterCollect, "stop-after-collect", "", false, "stop process after collect once")
 
 	//goland:noinspection GoUnhandledErrorResult
 	Command.MarkFlagRequired("collect-type")
@@ -142,6 +144,10 @@ func collect() error {
 	finished := time.Now()
 	nextTrigger := finished
 
+	if true == stopAfterCollect {
+		return collectAndSave(savePath, collectSource, collectType)
+	}
+
 	for {
 		select {
 		case sig := <-s:
@@ -165,7 +171,6 @@ func collect() error {
 				log.Println("next collection will start at", nextTrigger.Format(types.LogDateTimeFormat))
 			}
 			finished = time.Now()
-
 		}
 	}
 
@@ -301,7 +306,7 @@ func collectAndSave(rootPath string, collectSource string, collectType string) (
 				return err
 
 			}
-			log.Printf("failed to get new end %s, but will contine with error %v\n", news[idx].Title, err)
+			log.Printf("failed to get new end %s, but will continue with error %v\n", news[idx].Title, err)
 		}
 
 		if news[idx].End != nil {
