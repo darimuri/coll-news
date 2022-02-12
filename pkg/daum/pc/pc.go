@@ -27,108 +27,12 @@ func (*pc) GetNewsHomeNewsList(p *rodtemplate.PageTemplate, dd types.DumpDirecto
 	newsList := make([]types.News, 0)
 	pageNum := 1
 
-	rt.NewInspectChain(p.SelectOrPanic("#cSub")).ForOne("ul[class=list_issue]", false, true, func(subListBlock *rt.ElementTemplate) error {
-		if subListBlock == nil {
-			return nil
-		}
-
-		p.ScreenShot(subListBlock, dd.TabScreenShot(pageNum), 0)
-
+	rt.NewInspectChain(p).ForOne("ul.list_newsissue", false, true, func(el *rt.ElementTemplate) error {
 		return nil
 	}).ForEach("li", true, true, func(idx int, li *rt.ElementTemplate) error {
-		news := extractIssue(li)
+		news := extractIssueHomeNews(li)
 		news.SetContextData(pageNum, idx, 0, dd, true)
 		newsList = append(newsList, news)
-
-		rt.NewInspectChain(li).ForOne("div[class=relate_thumb]", false, true, func(el *rt.ElementTemplate) error {
-			return nil
-		}).ForEach("div[class=thumb_relate]", true, true, func(jdx int, div *rt.ElementTemplate) error {
-			rnews := extractIssueRelate(div)
-			rnews.SetContextData(pageNum, idx, jdx+1, dd, true)
-			newsList = append(newsList, rnews)
-
-			return nil
-		})
-
-		return nil
-	})
-
-	pageNum++
-
-	yDelta := p.El("#wrapMinidaum").Height()
-	yDelta += p.El("#kakaoHead").Height()
-	yDelta -= 24
-
-	newsMainBlock := p.SelectOrPanic("#cMain")
-	articleChain := rt.NewInspectChain(newsMainBlock).ForOne("#mArticle", true, true, func(newsArticleBlock *rt.ElementTemplate) error {
-		pageNum++
-
-		yDelta += newsArticleBlock.El("div[class=box_photo]").Height()
-		yDelta += 660
-
-		return nil
-	})
-
-	selfChain := articleChain.SelfChain()
-	selfChain.ForOne("div[class=box_peruse] > div[class='pop_news pop_cmt']", false, true, func(perBlock *rt.ElementTemplate) error {
-		if perBlock == nil {
-			return nil
-		}
-
-		p.ScreenShot(perBlock, dd.TabScreenShot(pageNum), yDelta)
-
-		myNewsList := extractPopNewses(dd, perBlock, "ol[class=list_popcmt]", pageNum, 0)
-		newsList = append(newsList, myNewsList...)
-
-		pageNum++
-
-		return nil
-	}).ForOne("div[class='box_g box_popnews'] > div[class='pop_news pop_cmt']", false, true, func(perBlock *rt.ElementTemplate) error {
-		if perBlock == nil {
-			return nil
-		}
-
-		p.ScreenShot(perBlock, dd.TabScreenShot(pageNum), yDelta)
-
-		myNewsList := extractPopNewses(dd, perBlock, "ol[class=list_popcmt]", pageNum, 1)
-		newsList = append(newsList, myNewsList...)
-
-		pageNum++
-
-		yDelta += 60
-
-		return nil
-	}).ForOne("div[class='pop_news pop_age']", false, true, func(perBlock *rt.ElementTemplate) error {
-		if perBlock == nil {
-			return nil
-		}
-
-		p.ScreenShot(perBlock, dd.TabScreenShot(pageNum), yDelta)
-
-		for idx, genderBlock := range perBlock.Els("div") {
-			myNewsList := extractPopNewses(dd, genderBlock, "ul", pageNum, 2+idx)
-			newsList = append(newsList, myNewsList...)
-		}
-
-		return nil
-	})
-
-	articleChain.ForOne("div[class=box_headline]", false, true, func(headlineBlock *rt.ElementTemplate) error {
-		if headlineBlock == nil {
-			return nil
-		}
-
-		p.ScreenShot(headlineBlock, dd.TabScreenShot(pageNum), yDelta)
-
-		return nil
-	}).ForEach("ul[class=list_headline]", false, true, func(idx int, ul *rt.ElementTemplate) error {
-		rt.NewInspectChain(ul).ForEach("li", true, true, func(jdx int, li *rt.ElementTemplate) error {
-			news := extractHeadlineSub(li)
-			news.SetContextData(pageNum, idx, jdx, dd, true)
-			newsList = append(newsList, news)
-
-			return nil
-		})
 
 		return nil
 	})
@@ -219,6 +123,27 @@ func extractIssueRelate(div *rt.ElementTemplate) types.News {
 		Publisher: rspan.MustText(),
 	}
 	return rnews
+}
+
+func extractIssueHomeNews(li *rodtemplate.ElementTemplate) types.News {
+	var src string
+	if li.Has("div.item_issue") {
+		src = util.ImgSrc(li.El("div.item_issue"))
+	}
+
+	contItem := li.El("div[class=cont_thumb]")
+	a := contItem.El("strong > a")
+	imgPublisher := contItem.El("span.info_thumb > span.logo_cp > img.thumb_g")
+	spanCategory := contItem.El("span.txt_category")
+
+	news := types.News{
+		URL:       util.EmptyIfNilString(a.MustAttribute("href")),
+		Image:     src,
+		Title:     a.MustText(),
+		Category:  spanCategory.MustText(),
+		Publisher: *imgPublisher.MustAttribute("alt"),
+	}
+	return news
 }
 
 func extractIssue(li *rt.ElementTemplate) types.News {

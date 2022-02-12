@@ -53,7 +53,12 @@ func (_ *pc) GetNewsEnd(p *rodtemplate.PageTemplate, n *types.News) error {
 
 		headBlock := contentBlock.SelectOrPanic("div[class=head_view]")
 
-		n.End.Provider = util.ImgALT(headBlock.El("em[class=info_cp] > a[class=link_cp]"))
+		if headBlock.Has("em[class=info_cp] > a[class=link_cp]") {
+			n.End.Provider = util.ImgALT(headBlock.El("em[class=info_cp] > a[class=link_cp]"))
+		} else if headBlock.Has("a.link_issue > strong.tit_thumb") {
+			n.End.Provider = headBlock.El("a.link_issue > strong.tit_thumb").MustText()
+		}
+
 		n.End.Title = headBlock.SelectOrPanic("h3[class=tit_view]").MustText()
 
 		infoBlock := headBlock.SelectOrPanic("span[class=info_view]")

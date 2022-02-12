@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"encoding/csv"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -145,7 +146,7 @@ func collect() error {
 	nextTrigger := finished
 
 	if true == stopAfterCollect {
-		return collectAndSave(savePath, collectSource, collectType)
+		return collectAndSave(savePath, collectSource, collectType, stopAfterCollect)
 	}
 
 	for {
@@ -159,7 +160,7 @@ func collect() error {
 				finished = time.Time{}
 				nextTrigger = time.Now().Add(collectPeriod)
 				go func() {
-					e <- collectAndSave(savePath, collectSource, collectType)
+					e <- collectAndSave(savePath, collectSource, collectType, false)
 				}()
 			}
 		case collErr := <-e:
@@ -177,7 +178,7 @@ func collect() error {
 	return nil
 }
 
-func collectAndSave(rootPath string, collectSource string, collectType string) (retErr error) {
+func collectAndSave(rootPath string, collectSource string, collectType string, stopAfterCollect bool) (retErr error) {
 	started := nowInLocalZone()
 
 	log.Println("collect news", collectSource, collectType, "to", rootPath)
@@ -240,11 +241,17 @@ func collectAndSave(rootPath string, collectSource string, collectType string) (
 		collectedAt = nowInLocalZone().Format(types.DataDateTimeFormat)
 		topNews, err = c.GetTopNewsList()
 
-		if err == nil {
+		if len(topNews) > 0 && err == nil {
+			log.Printf("got %d numbers of top news\n", len(topNews))
 			break
 		}
 
-		log.Println("failed to get top news list for", err)
+		if err != nil {
+			log.Println("failed to get top news list for", err)
+		} else if len(topNews) == 0 {
+			log.Println("top news list is empty")
+		}
+
 		time.Sleep(time.Second)
 
 		if listGetErrorCount < listGetRetryCount {
@@ -255,34 +262,32 @@ func collectAndSave(rootPath string, collectSource string, collectType string) (
 		return err
 	}
 
-	//TODO: daum pc GetNewsHomeNewsList error should be fixed.
-	// https://github.com/darimuri/coll-news/issues/8
-	// skip while this issue is resolved
-	listGetErrorCount = 0
-	if collectSource == coll.Daum && collectType == coll.PC {
-		log.Println("skip news home news list for https://github.com/darimuri/coll-news/issues/8")
-	} else {
-		for {
-			log.Printf("get news home news list for error count(%d) < retry count(%d)\n", listGetErrorCount, listGetRetryCount)
+	for {
+		log.Printf("get news home news list for error count(%d) < retry count(%d)\n", listGetErrorCount, listGetRetryCount)
 
-			c.NewsHome()
-			collectedAt = time.Now().Format(types.DataDateTimeFormat)
-			homeNews, err = c.GetNewsHomeNewsList()
+		c.NewsHome()
+		collectedAt = time.Now().Format(types.DataDateTimeFormat)
+		homeNews, err = c.GetNewsHomeNewsList()
 
-			if err == nil {
-				break
-			}
-
-			log.Println("failed to get news home news list for", err)
-			time.Sleep(time.Second)
-
-			if listGetErrorCount < listGetRetryCount {
-				listGetErrorCount++
-				continue
-			}
-
-			return err
+		if len(homeNews) > 0 && err == nil {
+			log.Printf("got %d numbers of home news\n", len(homeNews))
+			break
 		}
+
+		if err != nil {
+			log.Println("failed to get news home news list for", err)
+		} else if len(homeNews) == 0 {
+			log.Println("home news list is empty")
+		}
+
+		time.Sleep(time.Second)
+
+		if listGetErrorCount < listGetRetryCount {
+			listGetErrorCount++
+			continue
+		}
+
+		return err
 	}
 
 	for i := range topNews {
@@ -298,7 +303,16 @@ func collectAndSave(rootPath string, collectSource string, collectType string) (
 	news = append(news, topNews...)
 	news = append(news, homeNews...)
 
-	log.Printf("get %d numbers of news ends\n", len(news))
+	if len(news) == 0 {
+		log.Printf("got 0 numbers of top(%d), home(%d) news\n", len(topNews), len(homeNews))
+		log.Printf("check dump path %s for details\n", dumpPath)
+
+		if stopAfterCollect {
+			return errors.New("got 0 numbers of news")
+		}
+	}
+
+	log.Printf("fetch %d numbers of news ends\n", len(news))
 
 	for idx := range news {
 		if err = c.GetNewsEnd(&news[idx]); err != nil {
@@ -314,7 +328,7 @@ func collectAndSave(rootPath string, collectSource string, collectType string) (
 		}
 
 		if idx > 10 && idx%10 == 1 {
-			log.Printf("processed %d percent of news end\n", (idx*100)/len(news))
+			log.Printf("processed (%d/%d) numbers, %d percent of news ends\n", idx, len(news), (idx*100)/len(news))
 		}
 	}
 
@@ -339,7 +353,7 @@ func collectAndSave(rootPath string, collectSource string, collectType string) (
 		return err
 	}
 
-	log.Println("collected news", collectSource, collectType, "to", collectDirectoryPath)
+	log.Println("collected news", collectSource, collectType, "to", dumpPath, listPath)
 
 	return nil
 }

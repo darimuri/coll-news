@@ -107,6 +107,15 @@ var _ = Describe("daum news pc", func() {
 
 			Expect(n.End.ModifiedAt).Should(BeEmpty())
 		})
+	})
+
+	Context("get news end", func() {
+		It("new end causes no error for auto", func() {
+			cut.Top()
+			n := types.News{URL: "https://auto.v.daum.net/v/EzNXrIvphS"}
+			err := cut.GetNewsEnd(&n)
+			Expect(err).Should(BeNil())
+		})
 
 		It("new end causes no error div[id=kakaoContent] block is missing", func() {
 			cut.Top()

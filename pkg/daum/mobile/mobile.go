@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"time"
 
 	"github.com/darimuri/go-lib/rodtemplate"
 	rt "github.com/darimuri/go-lib/rodtemplate"
@@ -27,125 +26,34 @@ func New() *mobile {
 }
 
 func (_ mobile) PrepareNewsHomeScreenShot(p *rt.PageTemplate) {
-	mainBlockSelector := "main[id=kakaoContent]"
-	if false == p.Has(mainBlockSelector) {
-		return
-	}
-	mainBlock := p.SelectOrPanic(mainBlockSelector)
-	sectionMainBlock := mainBlock.SelectOrPanic("div.section_main")
-	mainNewsSelector := "div[data-tiara-layer=MAIN_NEWS]"
-	if true == sectionMainBlock.Has(mainNewsSelector) {
-		mainNewsBlock := mainBlock.SelectOrPanic(mainNewsSelector)
+	rt.NewInspectChain(p).ForOne("div.box_g", true, true, func(el *rt.ElementTemplate) error {
+		for {
+			more := el.El("a.link_more")
 
-		p.ScrollTo(mainNewsBlock)
-		p.WaitRepaint()
-
-		moreSelector := "a.link_more"
-		if true == mainNewsBlock.Has(moreSelector) {
-			for mainNewsBlock.El(moreSelector).MustVisible() {
-				mainNewsBlock.El(moreSelector).MustClick()
-				p.WaitRepaint()
-
-				time.Sleep(100 * time.Microsecond)
+			if !more.MustVisible() {
+				break
 			}
+
+			p.ScrollTo(more)
+			more.MustClick()
+
+			p.WaitIdle()
 		}
-	}
+
+		return nil
+	})
 }
 
 func (_ mobile) GetNewsHomeNewsList(p *rodtemplate.PageTemplate, dd types.DumpDirectory) ([]types.News, error) {
 	newsList := make([]types.News, 0)
 	pageNum := 1
 
-	mainBlockSelector := "main[id=kakaoContent]"
-	if false == p.Has(mainBlockSelector) {
-		return newsList, nil
-	}
-
-	mainBlock := p.SelectOrPanic(mainBlockSelector)
-
-	mainSectionSelfChain := rt.NewInspectChain(mainBlock).ForOne("div.section_main", true, true, func(sectionMainBlock *rt.ElementTemplate) error {
+	rt.NewInspectChain(p).ForOne("ul.list_column", true, true, func(el *rt.ElementTemplate) error {
 		return nil
-	}).SelfChain()
-
-	mainSectionSelfChain.ForOne("div.box_homeissue", false, true, func(homeIssueBlock *rt.ElementTemplate) error {
-		if homeIssueBlock == nil {
-			return nil
-		}
-
-		rt.NewInspectChain(homeIssueBlock).ForEach("ul.list_homeissue > li", false, true, func(idx int, b *rt.ElementTemplate) error {
-			thumb := extractThumb(b)
-			thumb.SetContextData(pageNum, idx, 0, dd, false)
-			newsList = append(newsList, thumb)
-
-			contSubSelector := "div.cont_sub"
-			if true == b.Has(contSubSelector) {
-				thumbSub := extractThumbSub(b, contSubSelector)
-				thumbSub.SetContextData(pageNum, idx, 1, dd, false)
-				newsList = append(newsList, thumbSub)
-			}
-
-			return nil
-		})
-
-		return nil
-	})
-
-	pageNum++
-
-	mainSectionSelfChain.ForOne("div[data-tiara-layer=MAIN_NEWS]", false, true, func(mainNewsBlock *rt.ElementTemplate) error {
-		if mainNewsBlock == nil {
-			return nil
-		}
-
-		p.ScrollTo(mainNewsBlock)
-		p.WaitRepaint()
-
-		order := newsList[len(newsList)-1].Order + 1
-
-		newsList = append(newsList, extractGenericNewsList(mainNewsBlock, pageNum, order, dd)...)
-
-		return nil
-	})
-
-	subSectionSelectors := []string{
-		"div[data-tiara-layer=POPULAR]",
-		"div[data-tiara-layer=DRI]",
-		"div.box_cmtrank",
-	}
-
-	rt.NewInspectChain(mainBlock).ForOne("div.section_sub", true, true, func(sectionSubBlock *rt.ElementTemplate) error {
-		for _, selector := range subSectionSelectors {
-			pageNum++
-			if true == sectionSubBlock.Has(selector) {
-				popularBlock := sectionSubBlock.SelectOrPanic(selector)
-
-				p.ScrollTo(popularBlock)
-				p.WaitRepaint()
-
-				order := newsList[len(newsList)-1].Order + 1
-
-				items := extractGenericNewsList(popularBlock, pageNum, order, dd)
-				newsList = append(newsList, items...)
-			}
-		}
-
-		rt.NewInspectChain(sectionSubBlock).ForEach("div.box_agenews > ul > li", false, true, func(_ int, t *rt.ElementTemplate) error {
-			t.MustClick()
-			p.WaitRepaint()
-
-			order := newsList[len(newsList)-1].Order + 1
-
-			for idx, b := range sectionSubBlock.Els("div.tab_slide > div.slide > div.panel > ul.list_news > div.slide > div.panel > li") {
-				n := types.News{
-					Title: b.MustText(),
-					URL:   util.AnchorHREF(b),
-				}
-				n.SetContextData(pageNum, order, idx, dd, false)
-				newsList = append(newsList, n)
-			}
-
-			return nil
-		})
+	}).ForEach("li", false, true, func(idx int, li *rt.ElementTemplate) error {
+		news := extractIssueHomeNews(li)
+		news.SetContextData(pageNum, idx, 0, dd, true)
+		newsList = append(newsList, news)
 
 		return nil
 	})
@@ -244,6 +152,26 @@ func (_ mobile) GetTopNewsList(p *rodtemplate.PageTemplate, dd types.DumpDirecto
 	}
 
 	return newsList, nil
+}
+
+func extractIssueHomeNews(li *rodtemplate.ElementTemplate) types.News {
+	var src string
+	if li.Has("div.wrap_thumb") {
+		src = util.ImgSrc(li.El("div.wrap_thumb"))
+	}
+
+	contItem := li.El("div.cont_thumb > div.inner_thumb > div.thumb_wrap")
+	a := li.El("a")
+	title := contItem.El("strong.tit_g")
+	publisher := contItem.El("span.info_thumb")
+
+	news := types.News{
+		URL:       util.EmptyIfNilString(a.MustAttribute("href")),
+		Image:     src,
+		Title:     title.MustText(),
+		Publisher: publisher.MustText(),
+	}
+	return news
 }
 
 func extractThumbSub(b *rt.ElementTemplate, contSubSelector string) types.News {

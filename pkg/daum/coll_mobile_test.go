@@ -96,6 +96,15 @@ var _ = Describe("daum news mobile", func() {
 				}
 			}
 		})
+	})
+
+	Context("get news end", func() {
+		It("new end causes no error for media", func() {
+			cut.Top()
+			n := types.News{URL: "https://newslink.media.daum.net/p/20220212204120906?x_trkm=t&x_imp=dG9yb3NfY2xvdWRfYWxwaGE=&x_hk=ODI4ODYzYWI4NjVjNzk1YWI4"}
+			err := cut.GetNewsEnd(&n)
+			Expect(err).Should(BeNil())
+		})
 
 		It("new end causes no error failed to find content block from url", func() {
 			cut.Top()
