@@ -1,8 +1,12 @@
-FROM golang:1.13.8-alpine3.11 AS build
+FROM golang:1.17.8-alpine3.15 AS build
+
+ARG COMMIT=unknown
+ARG VERSION=dev
+ARG DATE=unknown
 
 COPY . /coll-news
 WORKDIR /coll-news
-RUN CGO_ENABLED=0 go build -o news ./cmd/main.go
+RUN CGO_ENABLED=0 go build -ldflags "-X 'github.com/darimuri/coll-news/cmd/version.commit=${COMMIT}' -X 'github.com/darimuri/coll-news/cmd/version.date=${DATE}' -X 'github.com/darimuri/coll-news/cmd/version.version=${VERSION}'" -o news ./cmd/main.go
 
 # use alpine to build the image
 FROM zenika/alpine-chrome:89-with-chromedriver
