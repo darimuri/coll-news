@@ -4,8 +4,8 @@ go 1.17
 
 require (
 	github.com/PraserX/atomic-cache v1.2.1
-	github.com/darimuri/go-lib v0.2.2
-	github.com/go-rod/rod v0.103.0
+	github.com/darimuri/go-lib v0.2.3
+	github.com/go-rod/rod v0.104.4
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/onsi/ginkgo v1.14.2
 	github.com/onsi/gomega v1.10.4
@@ -36,7 +36,7 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.1 // indirect
 	github.com/ysmood/goob v0.3.1 // indirect
-	github.com/ysmood/gson v0.6.4 // indirect
+	github.com/ysmood/gson v0.7.0 // indirect
 	github.com/ysmood/leakless v0.7.0 // indirect
 	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2 // indirect
 	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4 // indirect
