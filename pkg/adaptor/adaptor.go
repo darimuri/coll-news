@@ -8,11 +8,12 @@ import (
 	"net/url"
 	"time"
 
+	rt "github.com/darimuri/go-lib/rodtemplate"
+	"github.com/go-rod/rod/lib/cdp"
+
 	"github.com/darimuri/coll-news/pkg/cache"
 	"github.com/darimuri/coll-news/pkg/types"
 	"github.com/darimuri/coll-news/pkg/util"
-	rt "github.com/darimuri/go-lib/rodtemplate"
-	"github.com/go-rod/rod/lib/cdp"
 )
 
 var _ error = (*TypedError)(nil)
@@ -51,8 +52,9 @@ func (a *Adaptor) Cleanup() {
 }
 
 func (a *Adaptor) Open(url string) {
+
 	page := a.BrowserTemplate.MustPage(url)
-	a.PageTemplate = rt.NewPageTemplate(page)
+	a.PageTemplate = rt.NewPageTemplate(page, time.Second*10)
 	a.SetViewport(a.Profile.Width, a.Profile.Height)
 
 	if err := page.WaitLoad(); err != nil {
@@ -72,7 +74,7 @@ func (a *Adaptor) Open(url string) {
 
 func (a *Adaptor) OpenTab(url string) {
 	page := a.BrowserTemplate.MustPages().First().MustNavigate(url)
-	a.PageTemplate = rt.NewPageTemplate(page)
+	a.PageTemplate = rt.NewPageTemplate(page, time.Second*10)
 	a.SetViewport(a.Profile.Width, a.Profile.Height)
 
 	if err := page.WaitLoad(); err != nil {
