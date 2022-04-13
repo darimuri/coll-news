@@ -52,19 +52,21 @@ func (a *Adaptor) Cleanup() {
 }
 
 func (a *Adaptor) Open(url string) {
-
 	page := a.BrowserTemplate.MustPage(url)
-	a.PageTemplate = rt.NewPageTemplate(page, time.Second*10)
+
+	log.Println("open url", url)
+
+	a.PageTemplate = rt.NewPageTemplate(page)
 	a.SetViewport(a.Profile.Width, a.Profile.Height)
 
-	if err := page.WaitLoad(); err != nil {
+	if err := page.Timeout(time.Second * 15).WaitLoad(); err != nil {
 		if false == cdp.ErrCtxDestroyed.Is(err) {
 			panic(err)
 		}
 		log.Println(err.Error(), "occurred occasionally but has no problem")
 	}
 
-	if err := page.WaitIdle(time.Minute * 10); err != nil {
+	if err := page.WaitIdle(time.Second * 10); err != nil {
 		if false == cdp.ErrCtxDestroyed.Is(err) {
 			panic(err)
 		}
@@ -74,17 +76,20 @@ func (a *Adaptor) Open(url string) {
 
 func (a *Adaptor) OpenTab(url string) {
 	page := a.BrowserTemplate.MustPages().First().MustNavigate(url)
-	a.PageTemplate = rt.NewPageTemplate(page, time.Second*10)
+
+	log.Println("open tab url", url)
+
+	a.PageTemplate = rt.NewPageTemplate(page)
 	a.SetViewport(a.Profile.Width, a.Profile.Height)
 
-	if err := page.WaitLoad(); err != nil {
+	if err := page.Timeout(time.Second * 15).WaitLoad(); err != nil {
 		if false == cdp.ErrCtxDestroyed.Is(err) {
 			panic(err)
 		}
 		log.Println(err.Error(), "occurred occasionally but has no problem")
 	}
 
-	if err := page.WaitIdle(time.Minute * 10); err != nil {
+	if err := page.WaitIdle(time.Second * 10); err != nil {
 		if false == cdp.ErrCtxDestroyed.Is(err) {
 			panic(err)
 		}

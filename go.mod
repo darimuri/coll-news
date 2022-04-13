@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/PraserX/atomic-cache v1.2.1
-	github.com/darimuri/go-lib v0.2.4
+	github.com/darimuri/go-lib v0.2.6
 	github.com/go-rod/rod v0.104.4
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/onsi/ginkgo v1.14.2
@@ -47,4 +47,4 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
-// replace github.com/darimuri/go-lib v0.2.4 => ../go-lib
+// replace github.com/darimuri/go-lib v0.2.6 => ../go-lib

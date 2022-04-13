@@ -9,7 +9,7 @@ WORKDIR /coll-news
 RUN CGO_ENABLED=0 go build -ldflags "-X 'github.com/darimuri/coll-news/cmd/version.commit=${COMMIT}' -X 'github.com/darimuri/coll-news/cmd/version.date=${DATE}' -X 'github.com/darimuri/coll-news/cmd/version.version=${VERSION}'" -o news ./cmd/main.go
 
 # use alpine to build the image
-FROM zenika/alpine-chrome:89-with-chromedriver
+FROM zenika/alpine-chrome:89-with-chromedriver-89
 
 ARG user=chrome
 ARG group=chrome
