@@ -1,7 +1,6 @@
 package mobile
 
 import (
-	"fmt"
 	"log"
 	"strings"
 
@@ -13,7 +12,7 @@ import (
 )
 
 const (
-	topNewsTabSelector = "div[id=channel_news1_top]"
+	topNewsTabSelector = "div[id=channel_news_top]"
 )
 
 var _ types.TypedCollector = (*mobile)(nil)
@@ -68,7 +67,7 @@ func (_ mobile) GetTopNewsList(p *rodtemplate.PageTemplate, dd types.DumpDirecto
 		return newsList, nil
 	}
 
-	newsBlocksSelector := "div._box_feed_news1"
+	newsBlocksSelector := "div.box_rtnews"
 	if false == p.Has(newsBlocksSelector) {
 		return newsList, nil
 	}
@@ -172,81 +171,6 @@ func extractIssueHomeNews(li *rodtemplate.ElementTemplate) types.News {
 		Publisher: publisher.MustText(),
 	}
 	return news
-}
-
-func extractThumbSub(b *rt.ElementTemplate, contSubSelector string) types.News {
-	subBlock := b.El(contSubSelector)
-	contSub := subBlock.El("span.inner_link")
-	n2 := types.News{
-		Publisher: contSub.El("span.txt_cp").MustText(),
-		Title:     contSub.El("span.tit_sub").MustText(),
-		URL:       util.AnchorHREF(subBlock),
-	}
-	return n2
-}
-
-func extractThumb(b *rt.ElementTemplate) types.News {
-	contBlock := b.El("div.cont_thumb")
-	contMain := contBlock.El("span.inner_link")
-	n1 := types.News{
-		Publisher: contMain.El("span.txt_cp").MustText(),
-		Title:     contMain.El("strong.tit_thumb").MustText(),
-		URL:       util.AnchorHREF(contBlock),
-		Image:     util.ImgSrc(b.El("div.wrap_thumb")),
-	}
-	return n1
-}
-
-func extractGenericNewsList(listBlock *rt.ElementTemplate, pageNum int, order int, dd types.DumpDirectory) []types.News {
-	items := make([]types.News, 0)
-
-	numBanners := 0
-	for idx, b := range listBlock.Els("ul > li") {
-		if b.MustAttribute("class") != nil && strings.Contains(*b.MustAttribute("class"), "item_bnr") {
-			numBanners++
-			continue
-		}
-		var contBlock *rt.ElementTemplate
-
-		if b.Has("div.cont_thumb > strong.tit_thumb") {
-			contBlock = b.El("div.cont_thumb > strong.tit_thumb")
-		} else if b.Has("div.cont_thumb > strong.tit_news") {
-			contBlock = b.El("div.cont_thumb > strong.tit_news")
-		} else if b.Has("div.item_cmtrank > strong.tit_cmtrank") {
-			contBlock = b.El("div.item_cmtrank > strong.tit_cmtrank")
-		} else if b.Has("a.link_correction") {
-			log.Println("skip link correction list html", b.MustHTML())
-			numBanners++
-			continue
-		} else {
-			panic(fmt.Errorf("failed to find content block from html %s", b.MustHTML()))
-		}
-
-		var myPublisher, myTitle string
-		if contBlock.Has("span.txt_cp") {
-			myPublisher = contBlock.El("span.txt_cp").MustText()
-		}
-
-		if contBlock.Has("span.txt_g") {
-			myTitle = contBlock.El("span.txt_g").MustText()
-		} else {
-			myTitle = strings.TrimSpace(contBlock.MustText())
-		}
-
-		n := types.News{
-			Publisher: myPublisher,
-			Title:     myTitle,
-			URL:       util.AnchorHREF(b),
-		}
-		n.SetContextData(pageNum, order, idx-numBanners, dd, false)
-
-		if true == b.Has("div.wrap_thumb") {
-			n.Image = util.ImgSrc(b.El("div.wrap_thumb"))
-		}
-
-		items = append(items, n)
-	}
-	return items
 }
 
 func extractThemeItem(item *rodtemplate.ElementTemplate, idx int) types.News {
