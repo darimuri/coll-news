@@ -25,3 +25,7 @@ should modify volume_bindings configuration
          "type" : "rw"
       }
 ```
+
+#### Word Cloud
+* https://qiita.com/ogady/items/78b40aa8780edf234c5f
+* https://github.com/psykhi/wordclouds

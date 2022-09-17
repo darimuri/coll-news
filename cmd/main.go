@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/darimuri/coll-news/cmd/api"
 	"github.com/darimuri/coll-news/cmd/coll"
 	"github.com/darimuri/coll-news/cmd/version"
 )
@@ -20,7 +21,7 @@ var rootCmd = &cobra.Command{
 }
 
 func main() {
-	rootCmd.AddCommand(coll.Command, version.Command)
+	rootCmd.AddCommand(coll.Command, api.Command, version.Command)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)

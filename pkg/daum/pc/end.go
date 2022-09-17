@@ -7,6 +7,7 @@ import (
 
 	"github.com/darimuri/go-lib/rodtemplate"
 
+	"github.com/darimuri/coll-news/pkg/daum/common"
 	"github.com/darimuri/coll-news/pkg/types"
 	"github.com/darimuri/coll-news/pkg/util"
 )
@@ -27,21 +28,33 @@ func (_ *pc) GetNewsEnd(p *rodtemplate.PageTemplate, n *types.News) error {
 		contentBlock = p.SelectOrPanic("main[id=kakaoContent]")
 	}
 
-	mainBlockSelector := "div[id=cMain]"
-	if false == contentBlock.Has(mainBlockSelector) {
-		log.Printf("main block %s is missing in %s\n", mainBlockSelector, n.URL)
-		return nil
+	mainBlockSelector := ""
+	mainBlockOldSelector := "div[id=cMain]"
+	mainBlockNewSelector := "div[class=main-content]"
+	mainBlockVodSelector := "div[class=feature_vodview]"
+	if false == contentBlock.Has(mainBlockNewSelector) {
+		log.Printf("main block %s is missing in %s\n", mainBlockNewSelector, n.URL)
+		if false == contentBlock.Has(mainBlockVodSelector) {
+			if false == contentBlock.Has(mainBlockOldSelector) {
+				log.Printf("main block %s is missing in %s\n", mainBlockOldSelector, n.URL)
+				return nil
+			} else {
+				mainBlockSelector = mainBlockOldSelector
+			}
+		} else {
+			mainBlockSelector = mainBlockVodSelector
+		}
+	} else {
+		mainBlockSelector = mainBlockNewSelector
 	}
 
-	mainBlock := contentBlock.SelectOrPanic(mainBlockSelector)
-
-	selfChain := rodtemplate.NewInspectChain(mainBlock).ForOne("div[id=mArticle]", true, true, func(mArticleBlock *rodtemplate.ElementTemplate) error {
+	selfChain := rodtemplate.NewInspectChain(contentBlock).ForOne(mainBlockSelector, true, true, func(mArticleBlock *rodtemplate.ElementTemplate) error {
 		return nil
 	}).SelfChain()
 
 	var endProcessed bool
 
-	selfChain.ForOne("div[data-cloud-area=article]", false, true, func(articleBlock *rodtemplate.ElementTemplate) error {
+	selfChain.ForOne("article[data-cloud-area=article]", false, true, func(articleBlock *rodtemplate.ElementTemplate) error {
 		if articleBlock == nil {
 			return nil
 		}
@@ -49,19 +62,26 @@ func (_ *pc) GetNewsEnd(p *rodtemplate.PageTemplate, n *types.News) error {
 		endProcessed = true
 
 		n.End = &types.End{}
-		n.End.Category = p.SelectOrPanic("h2[id=kakaoBody]").MustText()
+		n.End.Category = contentBlock.SelectOrPanic("h2[class=screen_out]").MustText()
+
+		providerFromMeta := common.MustHeaderMeta(p, "og:article:author")
+		if providerFromMeta != nil {
+			n.End.Provider = *providerFromMeta
+		}
 
 		headBlock := contentBlock.SelectOrPanic("div[class=head_view]")
 
-		if headBlock.Has("em[class=info_cp] > a[class=link_cp]") {
-			n.End.Provider = util.ImgALT(headBlock.El("em[class=info_cp] > a[class=link_cp]"))
-		} else if headBlock.Has("a.link_issue > strong.tit_thumb") {
-			n.End.Provider = headBlock.El("a.link_issue > strong.tit_thumb").MustText()
+		if n.End.Provider == "" {
+			if headBlock.Has("em[class=info_cp] > a[class=link_cp]") {
+				n.End.Provider = util.ImgALT(headBlock.El("em[class=info_cp] > a[class=link_cp]"))
+			} else if headBlock.Has("a.link_issue > strong.tit_thumb") {
+				n.End.Provider = headBlock.El("a.link_issue > strong.tit_thumb").MustText()
+			}
 		}
 
 		n.End.Title = headBlock.SelectOrPanic("h3[class=tit_view]").MustText()
 
-		infoBlock := headBlock.SelectOrPanic("span[class=info_view]")
+		infoBlock := headBlock.SelectOrPanic("div[class=info_view]")
 
 		spanS := infoBlock.Els("span[class=txt_info]")
 		for idx := range spanS {
@@ -75,10 +95,12 @@ func (_ *pc) GetNewsEnd(p *rodtemplate.PageTemplate, n *types.News) error {
 			}
 		}
 
-		counterSelector := "button[id=alexCounter]"
-		if true == infoBlock.Has(counterSelector) {
-			counterBlock := infoBlock.El(counterSelector)
-			n.End.NumComment = counterBlock.El("span[class=alex-count-area]").MustTextAsUInt64()
+		utilBlock := headBlock.SelectOrPanic("div[class=util_wrap]")
+
+		counterSelector := "button.btn_cmt"
+		if true == utilBlock.Has(counterSelector) {
+			counterBlock := utilBlock.El(counterSelector)
+			n.End.NumComment = counterBlock.El("span.num_cmt").MustTextAsUInt64()
 		}
 
 		n.End.Text = articleBlock.MustText()

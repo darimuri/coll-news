@@ -22,7 +22,13 @@ const (
 	Mobile = "mobile"
 	PC     = "pc"
 	Types  = "mobile/pc"
+
+	DumpDir = "dump"
 )
+
+func GetTypes() []string {
+	return []string{Mobile, PC}
+}
 
 type Option struct {
 	ChromeBin   string

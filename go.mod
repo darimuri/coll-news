@@ -1,6 +1,6 @@
 module github.com/darimuri/coll-news
 
-go 1.17
+go 1.18
 
 require (
 	github.com/PraserX/atomic-cache v1.2.1
@@ -47,4 +47,4 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
-// replace github.com/darimuri/go-lib v0.2.6 => ../go-lib
+//replace github.com/darimuri/go-lib v0.1.8 => ../go-lib

@@ -9,6 +9,7 @@ import (
 	"github.com/darimuri/go-lib/rodtemplate"
 
 	"github.com/darimuri/coll-news/pkg/adaptor"
+	"github.com/darimuri/coll-news/pkg/daum/common"
 	"github.com/darimuri/coll-news/pkg/types"
 	"github.com/darimuri/coll-news/pkg/util"
 )
@@ -43,22 +44,30 @@ func (_ mobile) GetNewsEnd(p *rodtemplate.PageTemplate, n *types.News) error {
 
 	if true == mArticleBlock.Has(articleSelector) {
 		n.End = &types.End{}
+
+		providerFromMeta := common.MustHeaderMeta(p, "og:article:author")
+		if providerFromMeta != nil {
+			n.End.Provider = *providerFromMeta
+		}
+
 		n.End.Category = contentBlock.SelectOrPanic("h2[class=screen_out]").MustText()
 
 		articleBlock := mArticleBlock.SelectOrPanic(articleSelector)
 		headBlock := contentBlock.SelectOrPanic("div[class=head_view]")
 
-		cpBlockSelector := "em[class=info_cp] > a[class=link_cp] > picture"
-
-		if false == headBlock.Has(cpBlockSelector) {
-			return adaptor.CPBlockNotFound
-		}
-
-		cpBlock := headBlock.El(cpBlockSelector)
-
-		n.End.Provider = util.ImgALT(cpBlock)
 		if n.End.Provider == "" {
-			n.End.Provider = util.ImgAltTryFromHTML(cpBlock)
+			cpBlockSelector := "em[class=info_cp] > a[class=link_cp] > picture"
+
+			if false == headBlock.Has(cpBlockSelector) {
+				return adaptor.CPBlockNotFound
+			}
+
+			cpBlock := headBlock.El(cpBlockSelector)
+
+			n.End.Provider = util.ImgALT(cpBlock)
+			if n.End.Provider == "" {
+				n.End.Provider = util.ImgAltTryFromHTML(cpBlock)
+			}
 		}
 
 		n.End.Title = headBlock.SelectOrPanic("h3[class=tit_view]").MustText()

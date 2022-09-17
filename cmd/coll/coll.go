@@ -12,7 +12,6 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"syscall"
 	"time"
@@ -21,10 +20,10 @@ import (
 	"github.com/labstack/echo/middleware"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
-	"golang.org/x/sys/unix"
 
 	"github.com/darimuri/coll-news/pkg/coll"
 	"github.com/darimuri/coll-news/pkg/types"
+	"github.com/darimuri/coll-news/pkg/util"
 )
 
 const (
@@ -105,7 +104,7 @@ func init() {
 	Command.Flags().DurationVarP(&collectPeriod, "collect-period", "p", time.Minute*10, "period between every news collection")
 	Command.Flags().StringVarP(&collectType, "collect-type", "t", "", fmt.Sprintf("collect news type(%s)", coll.Types))
 	Command.Flags().StringVarP(&collectSource, "collect-news-source", "s", "", fmt.Sprintf("news source(%s)", coll.Sources))
-	Command.Flags().StringVarP(&collectDirectoryPath, "save-directory-path", "d", "", "save path for collected data")
+	Command.Flags().StringVarP(&collectDirectoryPath, "collect-directory", "d", "coll_dir", "collect directory path to store collected data")
 	Command.Flags().StringVarP(&listOutputFormat, "list-output-format", "f", "b", fmt.Sprintf("list output format of collected news(%s)", listTypesDesc))
 	Command.Flags().BoolVarP(&disableHeadless, "no-headless", "n", false, "collect news in non-headless mode")
 	Command.Flags().BoolVarP(&endGetIgnoreError, "end-get-ignore-error", "e", false, "continue collect end when error occurs")
@@ -119,8 +118,6 @@ func init() {
 	Command.MarkFlagRequired("collect-type")
 	//goland:noinspection GoUnhandledErrorResult
 	Command.MarkFlagRequired("collect-news-source")
-	//goland:noinspection GoUnhandledErrorResult
-	Command.MarkFlagRequired("save-directory-path")
 
 	log.SetFlags(log.LstdFlags | log.Lmicroseconds | log.Lshortfile)
 }
@@ -183,7 +180,7 @@ func collectAndSave(rootPath string, collectSource string, collectType string, s
 
 	log.Println("collect news", collectSource, collectType, "to", rootPath)
 
-	dumpPath := filepath.Join(rootPath, "dump", started.Format(types.FileYearFormat))
+	dumpPath := filepath.Join(rootPath, coll.DumpDir, started.Format(types.FileYearFormat))
 	fullDumpPath := filepath.Join(dumpPath, started.Format(types.FileDateFormat))
 	listPath := filepath.Join(rootPath, "list", started.Format(types.FileYearFormat), started.Format(types.FileDateFormat))
 
@@ -478,7 +475,7 @@ func checkDirWritable(dir string) error {
 		if errStat == nil {
 			if false == s.IsDir() {
 				return fmt.Errorf("%s should be a directory", dir)
-			} else if runtime.GOOS == "linux" && unix.Access(dir, unix.W_OK) != nil {
+			} else if util.SyscallAccessWrite(dir) != nil {
 				return fmt.Errorf("directory %s should be writable", dir)
 			}
 			break
@@ -565,11 +562,11 @@ func validateSavePathWritable() error {
 		}
 
 		if false == info.IsDir() {
-			return fmt.Errorf("save-path %s is not a directory", collectDirectoryPath)
+			return fmt.Errorf("collect-directory %s is not a directory", collectDirectoryPath)
 		}
 
-		if info.Mode().Perm()&(1<<(uint(7))) == 0 {
-			return fmt.Errorf("write permission is not set to save-path %s", collectDirectoryPath)
+		if err := util.SyscallAccessWrite(collectDirectoryPath); err != nil {
+			return fmt.Errorf("write permission is not set to collect-directory %s", collectDirectoryPath)
 		}
 	}
 

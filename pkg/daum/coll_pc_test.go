@@ -117,6 +117,13 @@ var _ = Describe("daum news pc", func() {
 			Expect(err).Should(BeNil())
 		})
 
+		It("new end causes no error for media", func() {
+			cut.Top()
+			n := types.News{URL: "https://newslink.media.daum.net/v/431993619"}
+			err := cut.GetNewsEnd(&n)
+			Expect(err).Should(BeNil())
+		})
+
 		It("new end causes no error div[id=kakaoContent] block is missing", func() {
 			cut.Top()
 			n := types.News{URL: "https://content.v.daum.net/v/kWGY0DyI9E"}

@@ -11,7 +11,7 @@ import (
 	"github.com/darimuri/coll-news/pkg/types"
 )
 
-var _ = Describe("naver news pc", func() {
+var _ = PDescribe("naver news pc", func() {
 	var browser *rod.Browser
 	var cut types.Collector
 

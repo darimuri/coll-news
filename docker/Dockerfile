@@ -1,4 +1,4 @@
-FROM golang:1.17.8-alpine3.15 AS build
+FROM golang:1.18.3-alpine3.16 AS build
 
 ARG COMMIT=unknown
 ARG VERSION=dev
