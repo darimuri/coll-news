@@ -63,9 +63,8 @@ var _ = Describe("daum news pc", func() {
 				Expect(n.TabScreenShot).ShouldNot(BeEmpty())
 
 				err = cut.GetNewsEnd(&n)
-				_, typedError := err.(adaptor.TypedError)
-				if false == typedError {
-					Expect(err).Should(BeNil(), "error getting top news end %v", n)
+				if err != nil {
+					Expect(err).Should(Equal(adaptor.CollectEndSkippedOnPurpose))
 				}
 			}
 		})
@@ -89,59 +88,56 @@ var _ = Describe("daum news pc", func() {
 				Expect(n.TabScreenShot).ShouldNot(BeEmpty())
 
 				err = cut.GetNewsEnd(&n)
-				_, typedError := err.(adaptor.TypedError)
-				if false == typedError {
-					Expect(err).Should(BeNil(), "error getting top news end %v", n)
+				if err != nil {
+					Expect(err).Should(Equal(adaptor.CollectEndSkippedOnPurpose))
 				}
 			}
-		})
-
-		It("new end ModifiedAt is correct for author is 고수정", func() {
-			cut.Top()
-			n := types.News{URL: "https://news.v.daum.net/v/20211016040021618"}
-			err := cut.GetNewsEnd(&n)
-			_, typedError := err.(adaptor.TypedError)
-			if false == typedError {
-				Expect(err).Should(BeNil(), "error getting top news end %v", n)
-			}
-
-			Expect(n.End.ModifiedAt).Should(BeEmpty())
 		})
 	})
 
 	Context("get news end", func() {
-		It("new end causes no error for auto", func() {
+		It("news end ModifiedAt is correct for author is 고수정", func() {
+			cut.Top()
+			n := types.News{URL: "https://news.v.daum.net/v/20211016040021618"}
+			err := cut.GetNewsEnd(&n)
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(n.End.ModifiedAt).Should(BeEmpty())
+		})
+
+		It("news end causes no error for auto", func() {
 			cut.Top()
 			n := types.News{URL: "https://auto.v.daum.net/v/EzNXrIvphS"}
 			err := cut.GetNewsEnd(&n)
 			Expect(err).Should(BeNil())
 		})
 
-		It("new end causes no error for media", func() {
+		It("news end skipped for kakao tv", func() {
+			cut.Top()
+			n := types.News{URL: "https://newslink.media.daum.net/v/432041806"}
+			err := cut.GetNewsEnd(&n)
+			Expect(err).Should(Equal(adaptor.CollectEndSkippedOnPurpose))
+		})
+
+		It("news end skipped for media", func() {
 			cut.Top()
 			n := types.News{URL: "https://newslink.media.daum.net/v/431993619"}
 			err := cut.GetNewsEnd(&n)
-			Expect(err).Should(BeNil())
+			Expect(err).Should(Equal(adaptor.CollectEndSkippedOnPurpose))
 		})
 
-		It("new end causes no error div[id=kakaoContent] block is missing", func() {
-			cut.Top()
-			n := types.News{URL: "https://content.v.daum.net/v/kWGY0DyI9E"}
-			err := cut.GetNewsEnd(&n)
-			_, typedError := err.(adaptor.TypedError)
-			if false == typedError {
-				Expect(err).Should(BeNil(), "error getting top news end %v", n)
-			}
-		})
-
-		It("news end causes no error div[id=cFeature] block is missing", func() {
+		It("news end skipped for video", func() {
 			cut.Top()
 			n := types.News{URL: "https://sports.daum.net/video/424281511"}
 			err := cut.GetNewsEnd(&n)
-			_, typedError := err.(adaptor.TypedError)
-			if false == typedError {
-				Expect(err).Should(BeNil(), "error getting top news end %v", n)
-			}
+			Expect(err).Should(Equal(adaptor.CollectEndSkippedOnPurpose))
 		})
+
+		It("new end skipped unexpectedly", func() {
+			cut.Top()
+			n := types.News{URL: "https://content.v.daum.net/v/kWGY0DyI9E"}
+			err := cut.GetNewsEnd(&n)
+			Expect(err).Should(Equal(adaptor.CollectEndSkippedUnexpectedly))
+		})
+
 	})
 })

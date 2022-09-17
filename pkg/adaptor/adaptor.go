@@ -31,7 +31,9 @@ func (t TypedError) Error() string {
 }
 
 var (
-	CPBlockNotFound = TypedError{err: errors.New("content provider block is missing")}
+	CPBlockNotFound               = TypedError{err: errors.New("content provider block is missing")}
+	CollectEndSkippedOnPurpose    = TypedError{err: errors.New("skip to collect news end on purpose")}
+	CollectEndSkippedUnexpectedly = TypedError{err: errors.New("skip to collect news end unexpectedly")}
 )
 
 type Adaptor struct {

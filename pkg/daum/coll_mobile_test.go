@@ -64,9 +64,8 @@ var _ = Describe("daum news mobile", func() {
 				//Expect(n.TabScreenShot).ShouldNot(BeEmpty())
 
 				err = cut.GetNewsEnd(&n)
-				_, typedError := err.(adaptor.TypedError)
-				if false == typedError {
-					Expect(err).Should(BeNil(), "error getting top news end %v", n)
+				if err != nil {
+					Expect(err).Should(Equal(adaptor.CollectEndSkippedOnPurpose))
 				}
 			}
 		})
@@ -90,9 +89,8 @@ var _ = Describe("daum news mobile", func() {
 				//Expect(n.TabScreenShot).ShouldNot(BeEmpty())
 
 				err = cut.GetNewsEnd(&n)
-				_, typedError := err.(adaptor.TypedError)
-				if false == typedError {
-					Expect(err).Should(BeNil(), "error getting top news end %v", n)
+				if err != nil {
+					Expect(err).Should(Equal(adaptor.CollectEndSkippedOnPurpose))
 				}
 			}
 		})

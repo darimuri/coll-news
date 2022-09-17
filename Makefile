@@ -10,9 +10,13 @@ test:
 build-cmd:
 	CGO_ENABLED=0 go build -ldflags "-X 'github.com/darimuri/coll-news/cmd/version.commit=$(COMMIT)' -X 'github.com/darimuri/coll-news/cmd/version.date=$(DATE)' -X 'github.com/darimuri/coll-news/cmd/version.version=$(VERSION)'" -o news ./cmd/main.go
 
-run-cmd: build-cmd
+run-mobile: build-cmd
 	mkdir -p `pwd`/coll_dir
-	./news coll -t mobile -s daum -d ./coll_dir -e -l 3 -b /usr/bin/chromium-browser --stop-after-collect
+	./news coll -t mobile -s daum -d ./coll_dir -e -l 3 --stop-after-collect
+
+run-pc: build-cmd
+	mkdir -p `pwd`/coll_dir
+	./news coll -t pc -s daum -d ./coll_dir -e -l 3 --stop-after-collect
 
 build-image:
 	docker rmi coll-news:$(COMMIT) 2> /dev/null || exit 0
@@ -43,9 +47,11 @@ launch-image: build-image
 
 run-image-mobile: build-image
 	mkdir -p `pwd`/coll_dir
-	docker run -it --name coll-news-mobile-$(COMMIT) -v `pwd`/coll_dir:/home/coll/coll_dir coll-news:$(COMMIT) news coll -t mobile -s daum -d ./coll_dir -e -l 3 -b /usr/bin/chromium-browser
+	docker rm coll-news-mobile-$(COMMIT) || exit 0
+	docker run -it --name coll-news-mobile-$(COMMIT) -v `pwd`/coll_dir:/home/coll/coll_dir coll-news:$(COMMIT) news coll -t mobile -s daum -d ./coll_dir -e -l 3 -b /usr/bin/chromium-browser --stop-after-collect
 
 run-image-pc: build-image
 	mkdir -p `pwd`/coll_dir
-	docker run -it --name coll-news-pc-$(COMMIT) -v `pwd`/coll_dir:/home/coll/coll_dir coll-news:$(COMMIT) news coll -t pc -s daum -d ./coll_dir -e -l 3 -b /usr/bin/chromium-browser
+	docker rm coll-news-pc-$(COMMIT) || exit 0
+	docker run -it --name coll-news-pc-$(COMMIT) -v `pwd`/coll_dir:/home/coll/coll_dir coll-news:$(COMMIT) news coll -t pc -s daum -d ./coll_dir -e -l 3 -b /usr/bin/chromium-browser --stop-after-collect
 

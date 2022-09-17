@@ -1,12 +1,12 @@
 package pc
 
 import (
-	"fmt"
 	"log"
 	"strings"
 
 	"github.com/darimuri/go-lib/rodtemplate"
 
+	"github.com/darimuri/coll-news/pkg/adaptor"
 	"github.com/darimuri/coll-news/pkg/daum/common"
 	"github.com/darimuri/coll-news/pkg/types"
 	"github.com/darimuri/coll-news/pkg/util"
@@ -37,7 +37,7 @@ func (_ *pc) GetNewsEnd(p *rodtemplate.PageTemplate, n *types.News) error {
 		if false == contentBlock.Has(mainBlockVodSelector) {
 			if false == contentBlock.Has(mainBlockOldSelector) {
 				log.Printf("main block %s is missing in %s\n", mainBlockOldSelector, n.URL)
-				return nil
+				return adaptor.CollectEndSkippedUnexpectedly
 			} else {
 				mainBlockSelector = mainBlockOldSelector
 			}
@@ -53,6 +53,7 @@ func (_ *pc) GetNewsEnd(p *rodtemplate.PageTemplate, n *types.News) error {
 	}).SelfChain()
 
 	var endProcessed bool
+	var chainError error
 
 	selfChain.ForOne("article[data-cloud-area=article]", false, true, func(articleBlock *rodtemplate.ElementTemplate) error {
 		if articleBlock == nil {
@@ -97,10 +98,9 @@ func (_ *pc) GetNewsEnd(p *rodtemplate.PageTemplate, n *types.News) error {
 
 		utilBlock := headBlock.SelectOrPanic("div[class=util_wrap]")
 
-		counterSelector := "button.btn_cmt"
-		if true == utilBlock.Has(counterSelector) {
-			counterBlock := utilBlock.El(counterSelector)
-			n.End.NumComment = counterBlock.El("span.num_cmt").MustTextAsUInt64()
+		numComment := common.MustNumComment(utilBlock)
+		if numComment != nil {
+			n.End.NumComment = *numComment
 		}
 
 		n.End.Text = articleBlock.MustText()
@@ -110,6 +110,11 @@ func (_ *pc) GetNewsEnd(p *rodtemplate.PageTemplate, n *types.News) error {
 
 		for _, img := range articleBlock.Els("img[class=thumb_g_article]") {
 			n.End.Images = append(n.End.Images, util.EmptyIfNilString(img.MustAttribute("src")))
+		}
+
+		err := common.ParseEmotions(articleBlock, n)
+		if err != nil {
+			return err
 		}
 
 		return nil
@@ -150,8 +155,9 @@ func (_ *pc) GetNewsEnd(p *rodtemplate.PageTemplate, n *types.News) error {
 		}
 
 		endProcessed = true
+		chainError = adaptor.CollectEndSkippedOnPurpose
 
-		log.Println("skip collect end of photo view")
+		log.Println("skip to collect news end for", n.URL)
 
 		return nil
 	}).ForOne("div[class=view_vod]", false, true, func(vodBlock *rodtemplate.ElementTemplate) error {
@@ -160,31 +166,40 @@ func (_ *pc) GetNewsEnd(p *rodtemplate.PageTemplate, n *types.News) error {
 		}
 
 		endProcessed = true
+		chainError = adaptor.CollectEndSkippedOnPurpose
 
 		log.Println("skip to collect news end for", n.URL)
 
 		return nil
-	})
-
-	if endProcessed {
-		return nil
-	}
-
-	rodtemplate.NewInspectChain(contentBlock).ForOne("div[id=cFeature]", false, true, func(featureBlock *rodtemplate.ElementTemplate) error {
+	}).ForOne("div[id=cFeature]", false, true, func(featureBlock *rodtemplate.ElementTemplate) error {
 		if featureBlock == nil {
 			return nil
 		}
 
 		endProcessed = true
+		chainError = adaptor.CollectEndSkippedOnPurpose
+
+		log.Println("skip to collect news end for", n.URL)
+
+		return nil
+	}).ForOne("div[id=mArticle]", false, true, func(featureBlock *rodtemplate.ElementTemplate) error {
+		if featureBlock == nil {
+			return nil
+		}
+
+		endProcessed = true
+		chainError = adaptor.CollectEndSkippedOnPurpose
 
 		log.Println("skip to collect news end for", n.URL)
 
 		return nil
 	})
 
-	if endProcessed {
+	if chainError != nil {
+		return chainError
+	} else if endProcessed {
 		return nil
 	}
 
-	return fmt.Errorf("failed to collect new end for %s", n.URL)
+	return adaptor.CollectEndSkippedUnexpectedly
 }
