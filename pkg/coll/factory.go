@@ -4,30 +4,23 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/go-rod/rod"
+	"github.com/go-rod/rod/lib/devices"
+	"github.com/go-rod/rod/lib/launcher"
+
 	"github.com/darimuri/coll-news/pkg/cache"
 	"github.com/darimuri/coll-news/pkg/daum"
 	dmobile "github.com/darimuri/coll-news/pkg/daum/mobile"
 	dpc "github.com/darimuri/coll-news/pkg/daum/pc"
 	"github.com/darimuri/coll-news/pkg/types"
-	"github.com/go-rod/rod"
-	"github.com/go-rod/rod/lib/devices"
-	"github.com/go-rod/rod/lib/launcher"
 )
 
 const (
-	Daum    = "daum"
-	Naver   = "naver"
-	Sources = "daum/naver"
-
-	Mobile = "mobile"
-	PC     = "pc"
-	Types  = "mobile/pc"
-
 	DumpDir = "dump"
 )
 
 func GetTypes() []string {
-	return []string{Mobile, PC}
+	return []string{types.Mobile, types.PC}
 }
 
 type Option struct {
@@ -77,12 +70,12 @@ func NewCollector(collectSource, collectType string, option Option) (types.Colle
 	}
 
 	switch collectType {
-	case PC:
+	case types.PC:
 		browser = rod.New()
-		profile = types.PC()
-	case Mobile:
+		profile = types.ProfilePC()
+	case types.Mobile:
 		browser = rod.New().DefaultDevice(devices.IPhone6or7or8)
-		profile = types.Mobile()
+		profile = types.ProfileMobile()
 	default:
 		return nil, fmt.Errorf("collector type %s is not supported", collectType)
 	}
@@ -92,15 +85,15 @@ func NewCollector(collectSource, collectType string, option Option) (types.Colle
 		Connect()
 
 	switch collectSource {
-	case Daum:
+	case types.Daum:
 		switch collectType {
-		case Mobile:
+		case types.Mobile:
 			t = dmobile.New()
-		case PC:
+		case types.PC:
 			t = dpc.New()
 		}
 		c, err = daum.NewPortal(browser, profile, t, option.SavePath, cache.NewLargeCache())
-	case Naver:
+	case types.Naver:
 	}
 
 	if err != nil {

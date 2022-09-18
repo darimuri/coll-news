@@ -102,8 +102,8 @@ var Command = &cobra.Command{
 func init() {
 	Command.Flags().StringVarP(&chromeBin, "chrome-bin", "b", "", "chrome browser binary path")
 	Command.Flags().DurationVarP(&collectPeriod, "collect-period", "p", time.Minute*10, "period between every news collection")
-	Command.Flags().StringVarP(&collectType, "collect-type", "t", "", fmt.Sprintf("collect news type(%s)", coll.Types))
-	Command.Flags().StringVarP(&collectSource, "collect-news-source", "s", "", fmt.Sprintf("news source(%s)", coll.Sources))
+	Command.Flags().StringVarP(&collectType, "collect-type", "t", "", fmt.Sprintf("collect news type(%s)", types.Types))
+	Command.Flags().StringVarP(&collectSource, "collect-news-source", "s", "", fmt.Sprintf("news source(%s)", types.Sources))
 	Command.Flags().StringVarP(&collectDirectoryPath, "collect-directory", "d", "coll_dir", "collect directory path to store collected data")
 	Command.Flags().StringVarP(&listOutputFormat, "list-output-format", "f", "b", fmt.Sprintf("list output format of collected news(%s)", listTypesDesc))
 	Command.Flags().BoolVarP(&disableHeadless, "no-headless", "n", false, "collect news in non-headless mode")
@@ -524,15 +524,15 @@ func dumpToFile(rows [][]string, listPath, filePrefix, ext string, sep rune, hea
 
 func validateFlags() error {
 	switch collectType {
-	case coll.PC, coll.Mobile:
+	case types.PC, types.Mobile:
 	default:
-		return fmt.Errorf("type should be %s. not %s", coll.Types, collectType)
+		return fmt.Errorf("type should be %s. not %s", types.Types, collectType)
 	}
 
 	switch collectSource {
-	case coll.Daum, coll.Naver:
+	case types.Daum, types.Naver:
 	default:
-		return fmt.Errorf("news-source should be %s. not %s", coll.Sources, collectSource)
+		return fmt.Errorf("news-source should be %s. not %s", types.Sources, collectSource)
 	}
 
 	if err := validateSavePathWritable(); err != nil {

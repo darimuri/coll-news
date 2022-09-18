@@ -22,6 +22,14 @@ type Loc string
 const (
 	Top  = "Top"
 	Home = "Home"
+
+	Daum    = "daum"
+	Naver   = "naver"
+	Sources = "daum/naver"
+
+	Mobile = "mobile"
+	PC     = "pc"
+	Types  = "mobile/pc"
 )
 
 type News struct {
@@ -145,14 +153,14 @@ type Profile struct {
 	TypedCollector
 }
 
-func PC() Profile {
+func ProfilePC() Profile {
 	return Profile{
 		Width:  1920,
 		Height: 1080,
 	}
 }
 
-func Mobile() Profile {
+func ProfileMobile() Profile {
 	return Profile{
 		Width:  640,
 		Height: 1080,

@@ -34,7 +34,7 @@ var _ = Describe("daum news pc", func() {
 			Connect()
 		Expect(err).Should(BeNil())
 
-		cut, err = NewPortal(browser, types.PC(), pc.New(), "../../test/daum/pc", endCache)
+		cut, err = NewPortal(browser, types.ProfilePC(), pc.New(), "../../test/daum/pc", endCache)
 		Expect(err).Should(BeNil())
 	})
 
@@ -64,7 +64,7 @@ var _ = Describe("daum news pc", func() {
 
 				err = cut.GetNewsEnd(&n)
 				if err != nil {
-					Expect(err).Should(Equal(adaptor.CollectEndSkippedOnPurpose))
+					Expect(err).Should(Equal(adaptor.EndSkippedOnPurpose))
 				}
 			}
 		})
@@ -89,7 +89,7 @@ var _ = Describe("daum news pc", func() {
 
 				err = cut.GetNewsEnd(&n)
 				if err != nil {
-					Expect(err).Should(Equal(adaptor.CollectEndSkippedOnPurpose))
+					Expect(err).Should(Equal(adaptor.EndSkippedOnPurpose))
 				}
 			}
 		})
@@ -115,28 +115,28 @@ var _ = Describe("daum news pc", func() {
 			cut.Top()
 			n := types.News{URL: "https://newslink.media.daum.net/v/432041806"}
 			err := cut.GetNewsEnd(&n)
-			Expect(err).Should(Equal(adaptor.CollectEndSkippedOnPurpose))
+			Expect(err).Should(Equal(adaptor.EndSkippedOnPurpose))
 		})
 
 		It("news end skipped for media", func() {
 			cut.Top()
 			n := types.News{URL: "https://newslink.media.daum.net/v/431993619"}
 			err := cut.GetNewsEnd(&n)
-			Expect(err).Should(Equal(adaptor.CollectEndSkippedOnPurpose))
+			Expect(err).Should(Equal(adaptor.EndSkippedOnPurpose))
 		})
 
 		It("news end skipped for video", func() {
 			cut.Top()
 			n := types.News{URL: "https://sports.daum.net/video/424281511"}
 			err := cut.GetNewsEnd(&n)
-			Expect(err).Should(Equal(adaptor.CollectEndSkippedOnPurpose))
+			Expect(err).Should(Equal(adaptor.EndSkippedOnPurpose))
 		})
 
 		It("new end skipped unexpectedly", func() {
 			cut.Top()
 			n := types.News{URL: "https://content.v.daum.net/v/kWGY0DyI9E"}
 			err := cut.GetNewsEnd(&n)
-			Expect(err).Should(Equal(adaptor.CollectEndSkippedUnexpectedly))
+			Expect(err).Should(Equal(adaptor.EndSkippedUnexpectedly))
 		})
 
 	})

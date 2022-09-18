@@ -37,7 +37,7 @@ func (_ *pc) GetNewsEnd(p *rodtemplate.PageTemplate, n *types.News) error {
 		if false == contentBlock.Has(mainBlockVodSelector) {
 			if false == contentBlock.Has(mainBlockOldSelector) {
 				log.Printf("main block %s is missing in %s\n", mainBlockOldSelector, n.URL)
-				return adaptor.CollectEndSkippedUnexpectedly
+				return adaptor.EndSkippedUnexpectedly
 			} else {
 				mainBlockSelector = mainBlockOldSelector
 			}
@@ -155,7 +155,7 @@ func (_ *pc) GetNewsEnd(p *rodtemplate.PageTemplate, n *types.News) error {
 		}
 
 		endProcessed = true
-		chainError = adaptor.CollectEndSkippedOnPurpose
+		chainError = adaptor.EndSkippedOnPurpose
 
 		log.Println("skip to collect news end for", n.URL)
 
@@ -166,7 +166,7 @@ func (_ *pc) GetNewsEnd(p *rodtemplate.PageTemplate, n *types.News) error {
 		}
 
 		endProcessed = true
-		chainError = adaptor.CollectEndSkippedOnPurpose
+		chainError = adaptor.EndSkippedOnPurpose
 
 		log.Println("skip to collect news end for", n.URL)
 
@@ -177,7 +177,7 @@ func (_ *pc) GetNewsEnd(p *rodtemplate.PageTemplate, n *types.News) error {
 		}
 
 		endProcessed = true
-		chainError = adaptor.CollectEndSkippedOnPurpose
+		chainError = adaptor.EndSkippedOnPurpose
 
 		log.Println("skip to collect news end for", n.URL)
 
@@ -188,7 +188,7 @@ func (_ *pc) GetNewsEnd(p *rodtemplate.PageTemplate, n *types.News) error {
 		}
 
 		endProcessed = true
-		chainError = adaptor.CollectEndSkippedOnPurpose
+		chainError = adaptor.EndSkippedOnPurpose
 
 		log.Println("skip to collect news end for", n.URL)
 
@@ -201,5 +201,5 @@ func (_ *pc) GetNewsEnd(p *rodtemplate.PageTemplate, n *types.News) error {
 		return nil
 	}
 
-	return adaptor.CollectEndSkippedUnexpectedly
+	return adaptor.EndSkippedUnexpectedly
 }

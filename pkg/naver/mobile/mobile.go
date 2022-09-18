@@ -1,8 +1,9 @@
 package mobile
 
 import (
-	"github.com/darimuri/coll-news/pkg/types"
 	rt "github.com/darimuri/go-lib/rodtemplate"
+
+	"github.com/darimuri/coll-news/pkg/types"
 )
 
 var _ types.TypedCollector = (*mobile)(nil)
@@ -12,6 +13,14 @@ type mobile struct {
 
 func New() *mobile {
 	return &mobile{}
+}
+
+func (_ mobile) Source() string {
+	return types.Naver
+}
+
+func (_ mobile) Type() string {
+	return types.Mobile
 }
 
 func (_ mobile) PrepareNewsHomeScreenShot(p *rt.PageTemplate) {

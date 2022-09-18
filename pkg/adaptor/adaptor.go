@@ -10,16 +10,28 @@ import (
 
 	rt "github.com/darimuri/go-lib/rodtemplate"
 	"github.com/go-rod/rod/lib/cdp"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/darimuri/coll-news/pkg/cache"
 	"github.com/darimuri/coll-news/pkg/types"
 	"github.com/darimuri/coll-news/pkg/util"
 )
 
+type Status string
+
+const (
+	StatusCPBlockNotFound        = Status("CPBlockNotFound")
+	StatusEndSkippedOnPurpose    = Status("EndSkippedOnPurpose")
+	StatusEndSkippedUnexpectedly = Status("EndSkippedUnexpectedly")
+	StatusOK                     = Status("OK")
+	StatusUndefinedError         = Status("UndefinedError")
+)
+
 var _ error = (*TypedError)(nil)
 
 type TypedError struct {
-	err error
+	status Status
+	err    error
 }
 
 func NewTypedError(err string) TypedError {
@@ -31,9 +43,9 @@ func (t TypedError) Error() string {
 }
 
 var (
-	CPBlockNotFound               = TypedError{err: errors.New("content provider block is missing")}
-	CollectEndSkippedOnPurpose    = TypedError{err: errors.New("skip to collect news end on purpose")}
-	CollectEndSkippedUnexpectedly = TypedError{err: errors.New("skip to collect news end unexpectedly")}
+	CPBlockNotFound        = TypedError{err: errors.New("content provider block is missing"), status: StatusCPBlockNotFound}
+	EndSkippedOnPurpose    = TypedError{err: errors.New("skip to collect news end on purpose"), status: StatusEndSkippedOnPurpose}
+	EndSkippedUnexpectedly = TypedError{err: errors.New("skip to collect news end unexpectedly"), status: StatusEndSkippedUnexpectedly}
 )
 
 type Adaptor struct {
@@ -120,6 +132,15 @@ func (a *Adaptor) GetTopNewsList() (news []types.News, retErr error) {
 		return nil, err
 	}
 
+	timer := prometheus.NewTimer(newsListDuration.WithLabelValues(a.Collector.Type(), a.Collector.Source(), types.Top))
+	defer func() {
+		timer.ObserveDuration()
+		newsLen := len(news)
+		if newsLen > 0 {
+			totalNewsCollected.WithLabelValues(a.Collector.Type(), a.Collector.Source(), types.Top).Add(float64(newsLen))
+		}
+	}()
+
 	return a.Collector.GetTopNewsList(a.PageTemplate, dd)
 }
 
@@ -141,6 +162,15 @@ func (a *Adaptor) GetNewsHomeNewsList() (news []types.News, retErr error) {
 	if err != nil {
 		return nil, err
 	}
+
+	timer := prometheus.NewTimer(newsListDuration.WithLabelValues(a.Collector.Type(), a.Collector.Source(), types.Home))
+	defer func() {
+		timer.ObserveDuration()
+		newsLen := len(news)
+		if newsLen > 0 {
+			totalNewsCollected.WithLabelValues(a.Collector.Type(), a.Collector.Source(), types.Home).Add(float64(newsLen))
+		}
+	}()
 
 	return a.Collector.GetNewsHomeNewsList(a.PageTemplate, dd)
 }
@@ -174,6 +204,21 @@ func (a *Adaptor) GetNewsEnd(n *types.News) (retErr error) {
 		n.End = end.(*types.End)
 		return
 	}
+
+	timer := prometheus.NewTimer(newsEndDuration.WithLabelValues(a.Collector.Type(), a.Collector.Source()))
+	defer func() {
+		timer.ObserveDuration()
+		status := StatusOK
+		if retErr != nil {
+			if te, ok := retErr.(TypedError); ok {
+				status = te.status
+			} else {
+				status = StatusUndefinedError
+			}
+		}
+
+		newsEndStatus.WithLabelValues(a.Collector.Type(), a.Collector.Source(), string(status)).Inc()
+	}()
 
 	a.OpenTab(n.URL)
 

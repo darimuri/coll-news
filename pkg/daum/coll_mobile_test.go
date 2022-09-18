@@ -35,7 +35,7 @@ var _ = Describe("daum news mobile", func() {
 			Connect()
 		Expect(err).Should(BeNil())
 
-		cut, err = NewPortal(browser, types.Mobile(), mobile.New(), "../../test/daum/mobile", endCache)
+		cut, err = NewPortal(browser, types.ProfileMobile(), mobile.New(), "../../test/daum/mobile", endCache)
 		Expect(err).Should(BeNil())
 	})
 
@@ -65,7 +65,7 @@ var _ = Describe("daum news mobile", func() {
 
 				err = cut.GetNewsEnd(&n)
 				if err != nil {
-					Expect(err).Should(Equal(adaptor.CollectEndSkippedOnPurpose))
+					Expect(err).Should(Equal(adaptor.EndSkippedOnPurpose))
 				}
 			}
 		})
@@ -90,7 +90,7 @@ var _ = Describe("daum news mobile", func() {
 
 				err = cut.GetNewsEnd(&n)
 				if err != nil {
-					Expect(err).Should(Equal(adaptor.CollectEndSkippedOnPurpose))
+					Expect(err).Should(Equal(adaptor.EndSkippedOnPurpose))
 				}
 			}
 		})

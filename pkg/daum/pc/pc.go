@@ -20,6 +20,14 @@ func New() *pc {
 	return &pc{}
 }
 
+func (_ pc) Source() string {
+	return types.Daum
+}
+
+func (_ pc) Type() string {
+	return types.PC
+}
+
 func (*pc) PrepareNewsHomeScreenShot(_ *rt.PageTemplate) {
 }
 

@@ -1,13 +1,22 @@
 package pc
 
 import (
-	"github.com/darimuri/coll-news/pkg/types"
 	rt "github.com/darimuri/go-lib/rodtemplate"
+
+	"github.com/darimuri/coll-news/pkg/types"
 )
 
 var _ types.TypedCollector = (*pc)(nil)
 
 type pc struct {
+}
+
+func (_ pc) Source() string {
+	return types.Naver
+}
+
+func (_ pc) Type() string {
+	return types.PC
 }
 
 func (_ pc) PrepareNewsHomeScreenShot(p *rt.PageTemplate) {

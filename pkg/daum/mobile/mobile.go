@@ -24,6 +24,14 @@ func New() *mobile {
 	return &mobile{}
 }
 
+func (_ mobile) Source() string {
+	return types.Daum
+}
+
+func (_ mobile) Type() string {
+	return types.Mobile
+}
+
 func (_ mobile) PrepareNewsHomeScreenShot(p *rt.PageTemplate) {
 	rt.NewInspectChain(p).ForOne("div.box_g", true, true, func(el *rt.ElementTemplate) error {
 		for {
