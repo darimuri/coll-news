@@ -260,18 +260,29 @@ func convertToDataFormat(at string) string {
 		return ""
 	}
 
-	layout := "2006.01.02. 15:04"
-	layoutFallback := "2006.01.02 15:04"
-	dt, err := time.ParseInLocation(layout, at, time.Local)
-	if err != nil {
-		dt, err = time.Parse(layoutFallback, at)
-		if err != nil {
-			log.Println("failed to parse", at, "with", layoutFallback, "for", err.Error())
-			return at
-		}
+	layouts := []string{
+		"2006.01.02. 15:04",
+		"2006.01.02 15:04",
+		"2006. 01. 2. 15:04",
+		"2006. 01.2. 15:04",
 	}
 
-	return dt.Format(types.DataDateTimeFormat)
+	var lastError error
+	for _, l := range layouts {
+		dt, err := time.ParseInLocation(l, at, time.Local)
+
+		if err == nil {
+			return dt.Format(types.DataDateTimeFormat)
+		}
+
+		lastError = err
+	}
+
+	if lastError != nil {
+		log.Println("failed to parse", at)
+	}
+
+	return at
 }
 
 func asKey(k string) string {
